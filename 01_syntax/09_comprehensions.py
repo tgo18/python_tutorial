@@ -285,7 +285,6 @@ def performance_and_best_practices_demo():
     long_upper = [upper for s in data if len(upper := s.upper()) > 5]
     print(f"    长字符串大写: {long_upper}")
 
-
 # ============================================================
 # 运行所有 demo
 # ============================================================

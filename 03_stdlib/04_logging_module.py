@@ -210,7 +210,6 @@ def multi_module_demo():
 
     svc = logging.getLogger("webapp.service")   # 子 logger 自动继承父 handler
     db = logging.getLogger("webapp.database")
-
     print("  子 logger 继承父 handler：")
     svc.info("处理请求")
     db.warning("连接池 > 80%")
@@ -258,18 +257,18 @@ def best_practices():
     print("  [1] logger = logging.getLogger(__name__)  # Java: getLogger(Class)")
 
     # [2] % 格式化（惰性求值）优于 f-string
-    logger.info("用户 %d 操作成功", 42)
-    print("  [2] 用 %s/%d 惰性格式化，性能更好")
+    logger.info("用户 %d 操作成功", 42)   # 级别不够时跳过格式化
+    print("  [2] 用 %s/%d 惰性格式化，性能更好\n")
 
     # [3] logger.exception() 自动记录异常堆栈
-    print("\n  [3] logger.exception() 记录堆栈：")
+    print("  [3] logger.exception() 记录堆栈：")
     try:
         1 / 0
     except ZeroDivisionError:
         logger.exception("计算失败")  # Java: logger.error("失败", e);
 
     # [4] extra 传递结构化上下文
-    print("\n  [4] extra 传递上下文：")
+    print("  [4] extra 传递上下文：")
     ctx_h = logging.StreamHandler(sys.stdout)
     ctx_h.setFormatter(logging.Formatter(
         "  %(levelname)s [user=%(user_id)s] %(message)s"))
@@ -280,11 +279,9 @@ def best_practices():
     ctx.removeHandler(ctx_h)
     ctx.propagate = True
 
-    # [5] 应用入口统一配置（类似 logback.xml）
+    # [5] 应用入口统一配置 / [6] dictConfig 生产级配置
     print("\n  [5] logging.basicConfig(level=INFO, format='...')  # 入口配置")
-
-    # [6] dictConfig 生产级配置（对比 logback.xml 的声明式配置）
-    print("  [6] logging.config.dictConfig({...})  # 生产推荐")
+    print("  [6] logging.config.dictConfig({...})  # 生产推荐（对比 logback.xml）")
 
     logger.removeHandler(h)
 

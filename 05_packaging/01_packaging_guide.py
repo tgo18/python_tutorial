@@ -267,28 +267,16 @@ def uv_lock_demo():
     print("-" * 60)
 
     print("""
-    # --- uv.lock 是什么？---
     # 类似 package-lock.json (npm) 或 gradle.lockfile
-    # 记录所有依赖的精确版本和哈希值，确保：
-    # 1. 团队所有人安装完全相同的版本
-    # 2. CI/CD 构建结果可复现
-    # 3. 防止"在我机器上能跑"的问题
+    # 记录所有依赖的精确版本和哈希值，确保团队环境一致、CI 可复现
 
-    # --- 工作流程 ---
     $ uv add requests          # 自动更新 uv.lock
     $ uv lock                  # 手动重新生成锁文件
     $ uv lock --upgrade        # 升级所有依赖到最新兼容版本
-    $ uv sync --frozen         # 严格按锁文件安装（不更新 lock）
+    $ uv sync --frozen         # 严格按锁文件安装（CI 推荐！）
 
-    # --- 最佳实践 ---
-    # 1. uv.lock 必须提交到 Git（和 poetry.lock 一样）
-    # 2. CI 中使用 uv sync --frozen 确保一致性
-    # 3. 定期 uv lock --upgrade 更新依赖
-
-    # --- 对比 ---
-    # pip freeze > requirements.txt  → 手动、容易忘记更新
-    # poetry.lock                    → 自动但解析慢
-    # uv.lock                        → 自动且极快（推荐！）
+    # 最佳实践：uv.lock 必须提交到 Git，CI 用 --frozen 确保一致性
+    # 对比：pip freeze 手动易忘 / poetry.lock 自动但慢 / uv.lock 自动且极快
     """)
 
 
@@ -300,21 +288,16 @@ def uv_tool_demo():
     print("-" * 60)
 
     print("""
-    # --- 什么是 uv tool？---
-    # 安装全局 CLI 工具，每个工具有独立的隔离环境
-    # 类比：像 npx (npm) 或者全局安装的 CLI 工具
-
+    # 安装全局 CLI 工具，每个工具有独立隔离环境（类比 npx）
     $ uv tool install ruff             # 安装代码检查工具
     $ uv tool install black            # 安装代码格式化工具
-    $ uv tool install httpie           # 安装 HTTP 客户端
     $ uv tool list                     # 列出已安装的工具
-    $ uv tool uninstall ruff           # 卸载工具
+    $ uv tool uninstall ruff           # 卸载
 
-    # --- uvx: 临时运行工具（≈ npx）---
-    $ uvx ruff check .                 # 不安装，直接临时运行 ruff
-    $ uvx black --check .             # 临时运行 black 检查格式
-    $ uvx cowsay "Hello Python!"       # 甚至可以跑小工具
-    # uvx 会自动下载、缓存、运行，用完即走
+    # --- uvx: 临时运行（≈ npx）---
+    $ uvx ruff check .                 # 不安装，直接临时运行
+    $ uvx black --check .             # 临时检查格式
+    $ uvx cowsay "Hello Python!"       # 自动下载、缓存、运行，用完即走
     """)
 
 
@@ -326,32 +309,26 @@ def uv_why_recommend_demo():
     print("-" * 60)
 
     print("""
-    # ===== 工具对比一览 =====
-    #
-    # 功能         pip            Poetry         uv
-    # ─────────────────────────────────────────────────────
-    # 安装包       pip install    poetry add     uv add / uv pip install
-    # 虚拟环境     python -m venv 自动管理       uv venv（可自动下载 Python）
-    # 锁文件       无(手动freeze) poetry.lock    uv.lock
-    # 依赖分组     无             有             有
-    # 构建/发布    twine          poetry build   uv build / uv publish
-    # 全局工具     pipx           无             uv tool
-    # 速度         慢             中等           极快（10-100x）
-    # 实现语言     Python         Python         Rust
+    # ===== 工具对比 =====
+    #  功能        pip            Poetry         uv
+    # ──────────────────────────────────────────────────
+    #  安装包      pip install    poetry add     uv add
+    #  虚拟环境    python -m venv 自动管理       uv venv（可自动下载 Python）
+    #  锁文件      无(手动freeze) poetry.lock    uv.lock
+    #  构建/发布   twine          poetry build   uv build / uv publish
+    #  全局工具    pipx           无             uv tool
+    #  速度        慢             中等           极快（10-100x）
+    #  实现语言    Python         Python         Rust
 
-    # ===== 推荐策略 =====
-    # 新项目 → 直接用 uv（2024年后的最佳选择）
-    # 老项目用 pip → 可以无缝切换到 uv pip（完全兼容）
-    # 老项目用 Poetry → 可以逐步迁移到 uv（兼容 pyproject.toml）
+    # 推荐：新项目直接用 uv，老项目可无缝迁移（兼容 pip / pyproject.toml）
 
-    # ===== 完整的 uv 工作流 =====
+    # ===== 完整 uv 工作流 =====
     $ uv init my-project && cd my-project   # 1. 创建项目
     $ uv add flask sqlalchemy               # 2. 添加依赖
-    $ uv add pytest --dev                   # 3. 添加开发依赖
-    $ uv run pytest                         # 4. 运行测试
-    $ uv run python -m my_app               # 5. 运行应用
-    $ uv build                              # 6. 打包
-    $ uv publish                            # 7. 发布到 PyPI
+    $ uv add pytest --dev                   # 3. 开发依赖
+    $ uv run pytest                         # 4. 测试
+    $ uv build                              # 5. 打包
+    $ uv publish                            # 6. 发布
     """)
 
     # 用 Java 做最终类比
@@ -410,18 +387,17 @@ def pytest_demo():
     @pytest.fixture                    # ≈ JUnit @BeforeEach
     def sample_user():
         user = {"name": "张三", "age": 30}
-        yield user                     # yield 之前 = setUp, 之后 = tearDown
-        print("清理用户数据")          # ← 这里做清理（≈ @AfterEach）
+        yield user                     # yield 前 = setUp, 后 = tearDown
+        print("清理用户数据")          # ≈ @AfterEach
 
-    @pytest.fixture(scope="module")    # ≈ JUnit @BeforeAll
+    @pytest.fixture(scope="module")    # ≈ JUnit @BeforeAll（模块级共享）
     def db_connection():
         conn = create_connection()
         yield conn
         conn.close()
 
-    def test_user_name(sample_user):   # 参数名 = fixture 名，自动注入！
+    def test_user_name(sample_user):   # 参数名 = fixture 名 → 自动注入！
         assert sample_user["name"] == "张三"
-    # Python fixture 通过参数名自动注入，比 Java @Autowired 更简洁
     """)
 
     # --- 参数化测试 ---
@@ -452,23 +428,16 @@ def pytest_demo():
     print("""
     from unittest.mock import Mock, patch, MagicMock
 
-    # --- 基本 Mock ---
     mock_svc = Mock()                             # ≈ Mockito.mock(Service.class)
     mock_svc.get_user.return_value = "张三"        # ≈ when(...).thenReturn(...)
-    assert mock_svc.get_user(1) == "张三"
     mock_svc.get_user.assert_called_once_with(1)  # ≈ verify(mock).getUser(1)
 
-    # --- patch 替换模块中的对象（≈ @MockBean）---
-    @patch("my_app.service.requests.get")
+    @patch("my_app.service.requests.get")          # ≈ @MockBean
     def test_fetch_data(mock_get):
         mock_get.return_value.json.return_value = {"key": "value"}
-        result = fetch_data("http://api.example.com")
-        assert result == {"key": "value"}
 
-    # --- MagicMock（≈ Mockito deep stubs）---
-    mock_db = MagicMock()
+    mock_db = MagicMock()                          # ≈ Mockito deep stubs
     mock_db.query.filter_by.return_value.first.return_value = "结果"
-    # 链式调用随便写，MagicMock 全都接受
     """)
 
     # 实际演示 Mock

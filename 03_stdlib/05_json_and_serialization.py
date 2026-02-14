@@ -48,8 +48,7 @@ def json_basics_demo():
     # 反序列化: JSON 字符串 -> Python 对象（loads = load from string）
     parsed = json.loads(pretty)
     print(f"  loads(): type={type(parsed).__name__}, name={parsed['name']}")
-    # 类型: dict<->object, list<->array, str<->string,
-    #        int/float<->number, True/False<->true/false, None<->null
+    # 类型: dict<->object, list<->array, str<->string, int/float<->number, None<->null
     print(f"  sort_keys: {json.dumps(user, sort_keys=True, ensure_ascii=False)[:55]}...")
 
 
@@ -139,15 +138,15 @@ def special_types_demo():
 
     # --- object_hook: 反序列化时自动转换（类似 Jackson Deserializer）---
     def datetime_hook(dct):
-        for key, val in dct.items():
-            if isinstance(val, str):
-                try:    dct[key] = datetime.fromisoformat(val)
+        for k, v in dct.items():
+            if isinstance(v, str):
+                try:    dct[k] = datetime.fromisoformat(v)
                 except (ValueError, TypeError): pass
         return dct
 
     event = json.loads('{"name": "会议", "start": "2024-06-15T09:00:00"}',
                        object_hook=datetime_hook)
-    print(f"  object_hook: start={event['start']} ({type(event['start']).__name__})")
+    print(f"  object_hook: {event['start']} ({type(event['start']).__name__})")
 
     # --- Decimal: parse_float 避免精度丢失（0.1+0.2 != 0.3）---
     price_json = '{"price": 19.99}'
@@ -195,10 +194,8 @@ def pickle_demo():
     print(f"  文件往返: {loaded}")
     os.remove(filepath)
 
-    # pickle vs json 对比
-    print("\n  json:   文本可读 | 跨语言 | 仅基本类型 | 相对安全")
-    print("  pickle: 二进制   | 仅Python | 任意对象  | 有安全风险")
-    print("  [警告] 永远不要 unpickle 不信任的数据！可执行任意代码")
+    # pickle vs json: 文本vs二进制, 跨语言vs仅Python, 基本类型vs任意对象
+    print("\n  [警告] 永远不要 unpickle 不信任的数据！可执行任意代码")
 
 
 # =============================================================================
@@ -237,22 +234,18 @@ def dataclass_json_demo():
     restored = User(address=Address(**raw.pop("address")), **raw)
     print(f"  -> dataclass: {restored}")
 
-    # --- 通用递归转换辅助函数 ---
+    # --- 通用递归转换（自动处理嵌套 dataclass）---
     def from_dict(cls, data: dict):
-        """递归将 dict 转为 dataclass（处理嵌套）"""
-        fieldtypes = {f.name: f.type for f in fields(cls)}
-        kwargs = {}
-        for k, v in data.items():
-            ft = fieldtypes.get(k)
-            if isinstance(v, dict) and isinstance(ft, type) and is_dataclass(ft):
-                kwargs[k] = from_dict(ft, v)
-            else:
-                kwargs[k] = v
-        return cls(**kwargs)
+        ftypes = {f.name: f.type for f in fields(cls)}
+        return cls(**{
+            k: from_dict(ftypes[k], v)
+            if isinstance(v, dict) and isinstance(ftypes.get(k), type) and is_dataclass(ftypes[k])
+            else v
+            for k, v in data.items()
+        })
 
     user2 = from_dict(User, json.loads(json_str))
-    print(f"  通用 from_dict: {user2}")
-    print(f"  类型: User={type(user2).__name__}, Address={type(user2.address).__name__}")
+    print(f"  from_dict: {user2} (Address={type(user2.address).__name__})")
 
 
 # =============================================================================
@@ -279,10 +272,8 @@ def pitfalls_and_best_practices_demo():
     print(f"  陷阱3 ascii=True:  {json.dumps(msg)}")
     print(f"         ascii=False: {json.dumps(msg, ensure_ascii=False)}")
 
-    # 陷阱4: NaN/Infinity 不是合法 JSON
-    print(f"  陷阱4 NaN: {json.dumps(float('nan'))}")
-    try:    json.dumps(float("nan"), allow_nan=False)
-    except ValueError as e: print(f"         allow_nan=False: {e}")
+    # 陷阱4: NaN/Infinity 不是合法 JSON（allow_nan=False 可严格校验）
+    print(f"  陷阱4 NaN: {json.dumps(float('nan'))} (allow_nan=False 会抛异常)")
 
     # 最佳实践
     print("\n  --- 最佳实践 ---")

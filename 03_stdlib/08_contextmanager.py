@@ -48,7 +48,7 @@ def with_basics_demo():
 # =============================================================================
 
 class ManagedResource:
-    """Java 对比: implements AutoCloseable { void close(); }
+    """Java: implements AutoCloseable { void close(); }
     Python __exit__ 更强大：能接收异常信息并决定是否吞掉"""
 
     def __init__(self, name: str):
@@ -60,7 +60,7 @@ class ManagedResource:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """离开时调用; 返回 True 吞异常, False 继续传播"""
+        """离开时调用; True=吞异常, False=继续传播"""
         if exc_type:
             print(f"  [exit]  异常: {exc_type.__name__}: {exc_val}")
         print(f"  [exit]  关闭: {self.name}")
@@ -195,9 +195,9 @@ def exit_stack_demo():
         files = [stack.enter_context(open(p)) for p in paths]
         for f in files:
             print(f"  {os.path.basename(f.name)}: {f.read()}")
-    print(f"  全部关闭? {all(f.closed for f in files)}")  # LIFO 关闭
-
-    # 注册清理回调（LIFO 顺序）
+    print(f"  全部关闭? {all(f.closed for f in files)}")
+    # 还可以注册清理回调（LIFO 顺序执行）
+    print("\n--- 清理回调 ---")
     with contextlib.ExitStack() as stack:
         stack.callback(print, "  回调B: 最先注册，最后执行")
         stack.callback(print, "  回调A: 最后注册，最先执行（LIFO）")
@@ -220,33 +220,29 @@ def timer(label: str = "代码块"):
 
 @contextlib.contextmanager
 def temp_directory(prefix: str = "app_"):
-    """创建临时目录，退出时自动删除"""
+    """创建临时目录，退出时自动清理"""
     path = tempfile.mkdtemp(prefix=prefix)
     try:
         yield path
     finally:
-        for f in os.listdir(path):
-            os.remove(os.path.join(path, f))
+        for fname in os.listdir(path):
+            os.remove(os.path.join(path, fname))
         os.rmdir(path)
-        print(f"  [清理] 临时目录已删除")
 
 
 class DatabaseContext:
     """数据库事务上下文: 正常提交，异常回滚
     Java: try (Connection c = ds.getConnection()) { c.commit(); }"""
 
-    def __init__(self, db: str):
+    def __init__(self, db):
         self.db = db
-
     def __enter__(self):
         print(f"  [DB] 连接 {self.db}，开始事务")
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        print(f"  [DB] {'回滚' if exc_type else '提交'}事务")
-        print(f"  [DB] 关闭连接")
+        print(f"  [DB] {'回滚' if exc_type else '提交'}事务，关闭连接")
         return False
-
     def execute(self, sql):
         print(f"  [DB] 执行: {sql}")
 
@@ -263,13 +259,13 @@ def custom_context_managers_demo():
         total = sum(range(1_000_000))
     print(f"  结果: {total}")
 
-    # 临时目录
+    # 临时目录——退出后自动清理
     print("\n--- 临时目录 ---")
     with temp_directory("demo_") as tmp:
         with open(os.path.join(tmp, "data.txt"), "w") as f:
             f.write("临时数据")
         print(f"  目录存在: {os.path.exists(tmp)}")
-    print(f"  退出后: {os.path.exists(tmp)}")
+    print(f"  退出后存在: {os.path.exists(tmp)}")
 
     # 数据库——正常提交
     print("\n--- 数据库（正常）---")
