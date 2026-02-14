@@ -54,6 +54,8 @@ python_tutorial/
 | 6 | 正则表达式 | `06_re_module.py` | java.util.regex |
 | 7 | dataclasses | `07_dataclasses_module.py` | Lombok @Data / Record |
 | 8 | 上下文管理器 | `08_contextmanager.py` | try-with-resources |
+| 9 | 数字与数学 | `09_numbers_and_math.py` | BigDecimal / Math |
+| 10 | 日期与时间 | `10_datetime_module.py` | java.time (LocalDateTime/ZonedDateTime) |
 
 ### 第四阶段：主流框架 (`04_frameworks/`)
 
@@ -71,7 +73,8 @@ python_tutorial/
 | 2 | pip | 包管理 | Maven / Gradle 依赖管理 |
 | 3 | pyproject.toml | 项目配置 | pom.xml / build.gradle |
 | 4 | Poetry | 现代包管理工具 | 类似 Gradle |
-| 5 | 测试 | pytest | JUnit |
+| 5 | uv | 新一代包管理（Rust 实现） | 速度类比 Gradle vs Maven 的提升 |
+| 6 | 测试 | pytest | JUnit |
 
 ## 快速开始
 
@@ -94,7 +97,7 @@ python3 01_syntax/01_types_and_variables.py
 | 类型系统 | 静态强类型 | 动态强类型 |
 | 编译/解释 | 编译为字节码（JVM） | 解释执行（CPython） |
 | 并发模型 | 真多线程 | GIL 限制，多进程/协程补偿 |
-| 包管理 | Maven/Gradle | pip/Poetry |
+| 包管理 | Maven/Gradle | pip/Poetry/uv |
 | 项目构建 | pom.xml/build.gradle | pyproject.toml |
 | Web 框架 | Spring Boot | Flask/FastAPI/Django |
 | ORM | JPA/MyBatis | SQLAlchemy/Django ORM |

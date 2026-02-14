@@ -56,6 +56,8 @@ python_tutorial/
 | 6 | Regular Expressions | `06_re_module.py` | java.util.regex |
 | 7 | dataclasses | `07_dataclasses_module.py` | Lombok @Data / Record |
 | 8 | Context Managers | `08_contextmanager.py` | try-with-resources |
+| 9 | Numbers & Math | `09_numbers_and_math.py` | BigDecimal / Math |
+| 10 | Date & Time | `10_datetime_module.py` | java.time (LocalDateTime/ZonedDateTime) |
 
 ### Phase 4: Web Frameworks (`04_frameworks/`)
 
@@ -73,7 +75,8 @@ python_tutorial/
 | 2 | pip | Package management | Maven / Gradle dependency management |
 | 3 | pyproject.toml | Project configuration | pom.xml / build.gradle |
 | 4 | Poetry | Modern package manager | Similar to Gradle |
-| 5 | Testing | pytest | JUnit |
+| 5 | uv | Next-gen package manager (Rust) | Speed leap like Gradle vs Maven |
+| 6 | Testing | pytest | JUnit |
 
 ## Quick Start
 
@@ -96,7 +99,7 @@ python3 01_syntax/01_types_and_variables.py
 | Type System | Static, strongly typed | Dynamic, strongly typed |
 | Execution | Compiled to bytecode (JVM) | Interpreted (CPython) |
 | Concurrency | True multi-threading | GIL limitation; multiprocessing / coroutines |
-| Package Manager | Maven / Gradle | pip / Poetry |
+| Package Manager | Maven / Gradle | pip / Poetry / uv |
 | Build Config | pom.xml / build.gradle | pyproject.toml |
 | Web Framework | Spring Boot | Flask / FastAPI / Django |
 | ORM | JPA / MyBatis | SQLAlchemy / Django ORM |
