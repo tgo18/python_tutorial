@@ -11,6 +11,14 @@ import threading
 import time
 
 
+def _run_threads(*threads):
+    """辅助函数：启动并等待所有线程"""
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+
+
 # =============================================================================
 # 1. Lock (threading.Lock) —— 对比 Java synchronized / ReentrantLock
 # =============================================================================
@@ -24,34 +32,28 @@ def lock_demo():
     # Java: lock.lock(); try { counter++; } finally { lock.unlock(); }
     lock = threading.Lock()
 
-    def run_threads(target, n=5):
-        counter = {"v": 0}
-        ts = [threading.Thread(target=target, args=(counter,)) for _ in range(n)]
-        for t in ts:
-            t.start()
-        for t in ts:
-            t.join()
-        return counter["v"]
+    def run_test(fn, n=5):
+        c = {"v": 0}
+        _run_threads(*[threading.Thread(target=fn, args=(c,)) for _ in range(n)])
+        return c["v"]
 
     def unsafe(c):
-        for _ in range(10000):
-            c["v"] += 1
+        for _ in range(10000): c["v"] += 1
 
     def safe(c):
         for _ in range(10000):
-            with lock:
-                c["v"] += 1
+            with lock: c["v"] += 1
 
-    print(f"  不加锁: {run_threads(unsafe)}（期望 50000，可能不一致）")
-    print(f"  加锁:   {run_threads(safe)}（始终 50000）")
+    print(f"  不加锁: {run_test(unsafe)}（期望 50000，可能不一致）")
+    print(f"  加锁:   {run_test(safe)}（始终 50000）")
 
     # tryLock —— 非阻塞获取（Java 的 lock.tryLock()）
-    test_lock = threading.Lock()
-    test_lock.acquire()
-    print(f"  tryLock（已占用）: {test_lock.acquire(blocking=False)}")
-    test_lock.release()
-    print(f"  tryLock（空闲）:   {test_lock.acquire(blocking=False)}")
-    test_lock.release()
+    lk = threading.Lock()
+    lk.acquire()
+    print(f"  tryLock（已占用）: {lk.acquire(blocking=False)}")
+    lk.release()
+    print(f"  tryLock（空闲）:   {lk.acquire(blocking=False)}")
+    lk.release()
 
 
 # =============================================================================
@@ -122,9 +124,8 @@ def condition_demo():
                 cond.notify_all()
             time.sleep(0.03)
 
-    p = threading.Thread(target=producer, args=("P1", 4))
-    c = threading.Thread(target=consumer, args=("C1", 4))
-    p.start(); c.start(); p.join(); c.join()
+    _run_threads(threading.Thread(target=producer, args=("P1", 4)),
+                 threading.Thread(target=consumer, args=("C1", 4)))
     print("  生产者-消费者完成")
 
 
@@ -147,14 +148,13 @@ def event_demo():
         start_event.wait()
         print(f"  [{name}] 收到信号，开始工作!")
 
-    threads = [threading.Thread(target=worker, args=(f"W-{i}",))
-               for i in range(3)]
-    for t in threads:
+    ts = [threading.Thread(target=worker, args=(f"W-{i}",)) for i in range(3)]
+    for t in ts:
         t.start()
     time.sleep(0.05)
     print("  [Main] 发送启动信号!")
     start_event.set()
-    for t in threads:
+    for t in ts:
         t.join()
 
     # 重置与超时
@@ -179,27 +179,19 @@ def semaphore_demo():
 
     def access_db(wid):
         with pool:
-            with lock:
-                active["n"] += 1
-                cur = active["n"]
-            print(f"  [W-{wid}] 连接（活跃: {cur}）")
+            with lock: active["n"] += 1
+            print(f"  [W-{wid}] 连接（活跃: {active['n']}）")
             time.sleep(0.04)
-            with lock:
-                active["n"] -= 1
+            with lock: active["n"] -= 1
 
-    ts = [threading.Thread(target=access_db, args=(i,)) for i in range(6)]
-    for t in ts:
-        t.start()
-    for t in ts:
-        t.join()
+    _run_threads(*[threading.Thread(target=access_db, args=(i,))
+                    for i in range(6)])
 
-    # BoundedSemaphore：release 不能超过初始值
+    # BoundedSemaphore：release 不能超过初始值（更安全）
     bs = threading.BoundedSemaphore(2)
     bs.acquire(); bs.release()
-    try:
-        bs.release()
-    except ValueError as e:
-        print(f"  BoundedSemaphore 多释放: {e}")
+    try: bs.release()
+    except ValueError as e: print(f"  BoundedSemaphore 多释放: {e}")
 
 
 # =============================================================================
@@ -222,15 +214,11 @@ def barrier_demo():
         barrier.wait()
         print(f"  [{name}] 屏障后继续")
 
-    threads = [
+    _run_threads(
         threading.Thread(target=worker, args=("Fast", 0.02)),
         threading.Thread(target=worker, args=("Medium", 0.04)),
         threading.Thread(target=worker, args=("Slow", 0.06)),
-    ]
-    for t in threads:
-        t.start()
-    for t in threads:
-        t.join()
+    )
 
 
 # =============================================================================
@@ -245,18 +233,18 @@ def with_statement_demo():
 
     lock = threading.Lock()
 
-    # Java 风格: lock.lock(); try { ... } finally { lock.unlock(); }
+    # Java: lock.lock(); try { ... } finally { lock.unlock(); }
     print("  Java 风格:")
     lock.acquire()
     try:
-        print("    临界区操作...")
+        print("    临界区...")
     finally:
         lock.release()
 
-    # Python 风格: with 自动 acquire/release，异常也安全
-    print("  Python 风格:")
+    # Python: with 自动 acquire/release，异常也安全
+    print("  Python 风格（推荐）:")
     with lock:
-        print("    临界区操作...")
+        print("    临界区...")
     print("    锁自动释放")
 
     # 所有同步原语都支持 with
@@ -292,35 +280,27 @@ def deadlock_demo():
                 with lb:
                     shared["count"] += 1
 
-    ts = [threading.Thread(target=safe_work, args=(i,)) for i in range(3)]
-    for t in ts:
-        t.start()
-    for t in ts:
-        t.join()
+    _run_threads(*[threading.Thread(target=safe_work, args=(i,))
+                    for i in range(3)])
     print(f"  结果: {shared['count']}（无死锁）")
 
     # --- 方法 2：使用 timeout ---
     print("\n  --- 方法 2：使用 timeout ---")
     lx, ly = threading.Lock(), threading.Lock()
-    stats = {"ok": 0, "fail": 0}
-    sl = threading.Lock()
+    stats, sl = {"ok": 0, "fail": 0}, threading.Lock()
 
     def try_locks(first, second):
         for _ in range(50):
             if not first.acquire(timeout=0.01):
                 with sl: stats["fail"] += 1
                 continue
-            got_second = second.acquire(timeout=0.01)
-            if got_second:
-                with sl: stats["ok"] += 1
-                second.release()
-            else:
-                with sl: stats["fail"] += 1
+            got = second.acquire(timeout=0.01)
+            with sl: stats["ok" if got else "fail"] += 1
+            if got: second.release()
             first.release()
 
-    t1 = threading.Thread(target=try_locks, args=(lx, ly))
-    t2 = threading.Thread(target=try_locks, args=(ly, lx))
-    t1.start(); t2.start(); t1.join(); t2.join()
+    _run_threads(threading.Thread(target=try_locks, args=(lx, ly)),
+                 threading.Thread(target=try_locks, args=(ly, lx)))
     print(f"  成功: {stats['ok']}, 超时: {stats['fail']}")
 
     # --- 方法 3：高级抽象 ---

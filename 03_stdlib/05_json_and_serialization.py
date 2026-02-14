@@ -60,25 +60,23 @@ def json_basics_demo():
 # =============================================================================
 
 def json_file_demo():
-    """带 's' 的操作字符串，不带 's' 的操作文件"""
+    """带 's' 操作字符串(dumps/loads)，不带 's' 操作文件(dump/load)"""
     print("\n" + "=" * 60)
     print("2. json.dump / json.load 文件操作")
     print("=" * 60)
 
     data = {"users": [{"id": 1, "name": "Alice"}, {"id": 2, "name": "Bob"}]}
-
     filepath = os.path.join(tempfile.gettempdir(), "demo_users.json")
 
-    # 写入文件（Java: mapper.writeValue(new File(...), obj)）
+    # 写入（Java: mapper.writeValue(new File(...), obj)）
     with open(filepath, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
-    print(f"  已写入: {filepath}")
+    print(f"  写入: {filepath}")
 
-    # 从文件读取（Java: mapper.readValue(new File(...), Map.class)）
+    # 读取（Java: mapper.readValue(new File(...), Map.class)）
     with open(filepath, "r", encoding="utf-8") as f:
         loaded = json.load(f)
-    print(f"  读取结果: {loaded['users'][0]}")
-
+    print(f"  读取: {loaded['users'][0]}")
     os.remove(filepath)
 
 
@@ -89,17 +87,16 @@ def json_file_demo():
 def custom_serialization_demo():
     """处理 json 默认不支持的类型: datetime, Decimal, set, Enum"""
     print("\n" + "=" * 60)
-    print("3. 自定义序列化（default 参数, JSONEncoder）")
+    print("3. 自定义序列化（default, JSONEncoder）")
     print("=" * 60)
 
     class Color(Enum):
         RED = "red"
-        GREEN = "green"
 
     data = {
         "created": datetime(2024, 1, 15, 10, 30, 0),
         "amount": Decimal("99.95"),
-        "tags": {"python", "json"},  # set 不支持
+        "tags": {"python", "json"},
         "color": Color.RED,
     }
 
@@ -118,13 +115,13 @@ def custom_serialization_demo():
     class EnhancedEncoder(json.JSONEncoder):
         def default(self, obj):
             if isinstance(obj, (datetime, date)):  return obj.isoformat()
-            if isinstance(obj, Decimal):  return str(obj)  # 字符串保留精度
+            if isinstance(obj, Decimal):  return str(obj)
             if isinstance(obj, set):      return sorted(list(obj))
             if isinstance(obj, Enum):     return obj.value
             return super().default(obj)
 
-    print("  --- JSONEncoder 子类 ---")
-    print(json.dumps(data, cls=EnhancedEncoder, indent=2, ensure_ascii=False))
+    print("  --- JSONEncoder 子类（Decimal 保留精度用 str）---")
+    print(json.dumps(data, cls=EnhancedEncoder, ensure_ascii=False))
 
 
 # =============================================================================
@@ -180,37 +177,31 @@ class GameState:
 
 
 def pickle_demo():
-    """
-    pickle.dumps/loads ≈ Java ObjectOutputStream/ObjectInputStream
-    只用于 Python 之间通信，不能跨语言！
-    """
+    """pickle.dumps/loads ≈ Java ObjectOutputStream/ObjectInputStream"""
     print("\n" + "=" * 60)
     print("5. pickle 模块（类似 Java Serializable）")
     print("=" * 60)
 
     state = GameState("勇者", 42, ["圣剑", "盾牌", "药水"])
 
-    # 序列化 / 反序列化
+    # 序列化 / 反序列化（只用于 Python 之间通信，不能跨语言！）
     pickled = pickle.dumps(state)
     restored = pickle.loads(pickled)
     print(f"  原始: {state}, inventory={state.inventory}")
     print(f"  还原: {restored}, inventory={restored.inventory}")
     print(f"  pickle 大小: {len(pickled)} bytes")
 
-    # 文件操作: pickle.dump / pickle.load
+    # 文件操作: pickle.dump(obj, file) / pickle.load(file)
     filepath = os.path.join(tempfile.gettempdir(), "game.pkl")
-    with open(filepath, "wb") as f:
-        pickle.dump(state, f)
-    with open(filepath, "rb") as f:
-        loaded = pickle.load(f)
+    with open(filepath, "wb") as f:  pickle.dump(state, f)
+    with open(filepath, "rb") as f:  loaded = pickle.load(f)
     print(f"  文件往返: {loaded}")
     os.remove(filepath)
 
-    # pickle vs json
-    print("\n  pickle vs json:")
-    print("  json:   文本可读 | 跨语言 | 仅基本类型 | 相对安全")
+    # pickle vs json 对比
+    print("\n  json:   文本可读 | 跨语言 | 仅基本类型 | 相对安全")
     print("  pickle: 二进制   | 仅Python | 任意对象  | 有安全风险")
-    print("\n  [警告] 永远不要 unpickle 不信任的数据！可执行任意代码")
+    print("  [警告] 永远不要 unpickle 不信任的数据！可执行任意代码")
 
 
 # =============================================================================
@@ -255,20 +246,20 @@ def dataclass_json_demo():
 
     # --- 通用递归转换辅助函数 ---
     def from_dict(cls, data: dict):
-        """递归将 dict 转为 dataclass"""
+        """递归将 dict 转为 dataclass（处理嵌套）"""
         fieldtypes = {f.name: f.type for f in fields(cls)}
         kwargs = {}
-        for key, value in data.items():
-            ft = fieldtypes.get(key)
-            if isinstance(value, dict) and isinstance(ft, type) and is_dataclass(ft):
-                kwargs[key] = from_dict(ft, value)
+        for k, v in data.items():
+            ft = fieldtypes.get(k)
+            if isinstance(v, dict) and isinstance(ft, type) and is_dataclass(ft):
+                kwargs[k] = from_dict(ft, v)
             else:
-                kwargs[key] = value
+                kwargs[k] = v
         return cls(**kwargs)
 
     user2 = from_dict(User, json.loads(json_str))
-    print(f"  通用转换: {user2}")
-    print(f"  类型验证: User={type(user2).__name__}, Address={type(user2.address).__name__}")
+    print(f"  通用 from_dict: {user2}")
+    print(f"  类型: User={type(user2).__name__}, Address={type(user2.address).__name__}")
 
 
 # =============================================================================
@@ -280,27 +271,25 @@ def pitfalls_and_best_practices_demo():
     print("7. 常见陷阱和最佳实践")
     print("=" * 60)
 
-    # 陷阱1: tuple 序列化后变成 list
-    original = {"coords": (10, 20)}
-    restored = json.loads(json.dumps(original))
-    print(f"  陷阱1 tuple->list: {type(original['coords']).__name__} -> {type(restored['coords']).__name__}")
+    # 陷阱1: tuple 序列化后变 list
+    orig = {"coords": (10, 20)}
+    back = json.loads(json.dumps(orig))
+    print(f"  陷阱1 tuple->list: {type(orig['coords']).__name__} -> {type(back['coords']).__name__}")
 
-    # 陷阱2: int 键变成 str 键
+    # 陷阱2: int 键变 str 键
     d = {1: "one", 2: "two"}
-    restored = json.loads(json.dumps(d))
-    print(f"  陷阱2 int键->str: {list(d.keys())} -> {list(restored.keys())}")
+    back = json.loads(json.dumps(d))
+    print(f"  陷阱2 int键->str: {list(d.keys())} -> {list(back.keys())}")
 
     # 陷阱3: 中文默认被转义
     msg = {"msg": "你好"}
-    print(f"  陷阱3 ensure_ascii=True:  {json.dumps(msg)}")
-    print(f"  陷阱3 ensure_ascii=False: {json.dumps(msg, ensure_ascii=False)}")
+    print(f"  陷阱3 ascii=True:  {json.dumps(msg)}")
+    print(f"         ascii=False: {json.dumps(msg, ensure_ascii=False)}")
 
     # 陷阱4: NaN/Infinity 不是合法 JSON
-    print(f"  陷阱4 NaN 默认允许: {json.dumps(float('nan'))}")
-    try:
-        json.dumps(float("nan"), allow_nan=False)
-    except ValueError as e:
-        print(f"  陷阱4 allow_nan=False: {e}")
+    print(f"  陷阱4 NaN: {json.dumps(float('nan'))}")
+    try:    json.dumps(float("nan"), allow_nan=False)
+    except ValueError as e: print(f"         allow_nan=False: {e}")
 
     # 最佳实践
     print("\n  --- 最佳实践 ---")

@@ -22,7 +22,6 @@ from typing import (
 
 def basic_type_hints_demo():
     """基本类型注解（对比 Java 原生类型）"""
-
     print("=" * 60)
     print("基本类型注解")
     print("=" * 60)
@@ -53,7 +52,6 @@ def basic_type_hints_demo():
 
 def container_type_hints_demo():
     """容器类型注解（对比 Java 泛型 List<Integer>, Map<String, Integer>）"""
-
     print("\n" + "=" * 60)
     print("容器类型注解")
     print("=" * 60)
@@ -82,7 +80,6 @@ def container_type_hints_demo():
 
 def optional_union_demo():
     """Optional 和 Union（对比 Java Optional<String>）"""
-
     print("\n" + "=" * 60)
     print("Optional 和 Union")
     print("=" * 60)
@@ -176,30 +173,27 @@ def protocol_demo():
     print("Protocol（结构化子类型）")
     print("=" * 60)
 
-    # Java 接口需要 implements；Python Protocol 只要"形状"匹配
+    # Java 接口需要 implements；Python Protocol 只要"形状"匹配（鸭子类型）
     @runtime_checkable
     class Drawable(Protocol):
         def draw(self) -> str: ...
 
     class Circle:
         def draw(self) -> str: return "Circle: O"
-
     class Square:
         def draw(self) -> str: return "Square: []"
-
     class NotDrawable:
         def move(self) -> str: return "Moving..."
 
     def render(shape: Drawable) -> None:
         print(f"  {shape.draw()}")
-
     render(Circle())   # OK: 有 draw()
     render(Square())   # OK: 有 draw()
     # render(NotDrawable())  # mypy 报错：缺少 draw()
 
-    print(f"  Circle 是 Drawable? {isinstance(Circle(), Drawable)}")
-    print(f"  NotDrawable 是 Drawable? {isinstance(NotDrawable(), Drawable)}")
-    print(f"  区别: Java 需 implements，Python 只看方法签名（鸭子类型）")
+    # runtime_checkable 允许运行时 isinstance 检查
+    print(f"  isinstance(Circle(), Drawable): {isinstance(Circle(), Drawable)}")
+    print(f"  isinstance(NotDrawable(), Drawable): {isinstance(NotDrawable(), Drawable)}")
 
 
 # ============================================================
@@ -246,22 +240,19 @@ def literal_type_demo():
     print("Literal 类型")
     print("=" * 60)
 
-    # Java 用枚举限制值；Python Literal 直接限制字面值
+    # Java 用枚举限制；Python Literal 直接限制字面值
     def set_color(color: Literal["red", "green", "blue"]) -> str:
         return f"颜色: {color}"
-    print(f"  {set_color('red')}, {set_color('blue')}")
-    # set_color("yellow")  # mypy 报错
+    print(f"  {set_color('red')}, {set_color('blue')}")  # set_color("yellow") => mypy 报错
 
     # 结合 overload 让返回类型随参数变化
     @overload
-    def parse(value: str, as_type: Literal["int"]) -> int: ...
+    def parse(val: str, as_type: Literal["int"]) -> int: ...
     @overload
-    def parse(value: str, as_type: Literal["float"]) -> float: ...
-    def parse(value: str, as_type: str) -> int | float:
-        return int(value) if as_type == "int" else float(value)
-
-    print(f"  parse('42','int'): {parse('42', 'int')}")
-    print(f"  parse('3.14','float'): {parse('3.14', 'float')}")
+    def parse(val: str, as_type: Literal["float"]) -> float: ...
+    def parse(val: str, as_type: str) -> int | float:
+        return int(val) if as_type == "int" else float(val)
+    print(f"  parse('42','int')={parse('42', 'int')}, parse('3.14','float')={parse('3.14', 'float')}")
 
 
 # ============================================================
@@ -286,8 +277,7 @@ def dataclass_demo():
 
     u1, u2 = User("张三", 30, "z@test.com"), User("李四", 16)
     print(f"  u1: {u1}")
-    print(f"  u2: {u2}")
-    print(f"  is_adult: u1={u1.is_adult()}, u2={u2.is_adult()}")
+    print(f"  u2: {u2}, is_adult: u1={u1.is_adult()}, u2={u2.is_adult()}")
 
     # 不可变 dataclass（类似 Java Record）
     @dataclass(frozen=True)
@@ -298,13 +288,12 @@ def dataclass_demo():
             return ((self.x - other.x) ** 2 + (self.y - other.y) ** 2) ** 0.5
 
     p1, p2 = Point(0.0, 0.0), Point(3.0, 4.0)
-    print(f"  距离 {p1} -> {p2}: {p1.distance_to(p2)}")
-
+    print(f"  距离: {p1.distance_to(p2)}")
     try:
         p1.x = 10.0  # type: ignore
     except AttributeError as e:
         print(f"  frozen 不可变: {e}")
-
+    # frozen=True 自动 __hash__，可放入 set
     pts = {Point(1.0, 2.0), Point(3.0, 4.0), Point(1.0, 2.0)}
     print(f"  Point set (去重): {pts}")
 
@@ -321,24 +310,19 @@ def mypy_tips_demo():
     print("=" * 60)
 
     print("""  安装: pip install mypy
-  使用: mypy script.py / mypy --strict src/
-  配置 (pyproject.toml):
-    [tool.mypy]
-    python_version = "3.10"
-    disallow_untyped_defs = true
-  指令: # type: ignore (忽略), cast() (强转)""")
+  使用: mypy script.py  /  mypy --strict src/
+  配置: pyproject.toml [tool.mypy] disallow_untyped_defs = true
+  指令: # type: ignore (忽略该行) / cast(Type, val) (强转)""")
 
-    # cast 示例（类似 Java 强转 (String) obj）
+    # cast（类似 Java 强转 (String) obj）
     data: Any = "hello"
     print(f"  cast 示例: {cast(str, data).upper()}")
 
-    # 渐进式类型检查
+    # 渐进式类型检查：旧代码和新代码共存
     def legacy(x, y):  # type: ignore[no-untyped-def]
-        return x + y  # 旧代码暂无注解
-
+        return x + y
     def typed(x: int, y: int) -> int:
-        return x + y  # 新代码有完整注解
-
+        return x + y
     print(f"  legacy(1,2)={legacy(1, 2)}, typed(1,2)={typed(1, 2)}")
 
     # Java vs Python 对比总结

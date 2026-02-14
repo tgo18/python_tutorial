@@ -121,7 +121,6 @@ def exception_hierarchy_demo():
       +-- IndexError            # ~ IndexOutOfBoundsException
       +-- FileNotFoundError     # ~ FileNotFoundException
       +-- OSError               # ~ IOException""")
-
     print("\n  关键: Python 没有 checked exception，全是 unchecked")
     print("  except Exception 不捕获 KeyboardInterrupt/SystemExit")
 
@@ -154,7 +153,7 @@ def custom_exception_demo():
     print("=" * 60)
 
     def process_order(oid, amount, balance):
-        if oid <= 0:    raise OrderNotFoundError(oid)
+        if oid <= 0:         raise OrderNotFoundError(oid)
         if amount > balance: raise InsufficientBalanceError(amount, balance)
         return f"订单 {oid} 支付成功，扣款 {amount:.2f}"
 
@@ -198,7 +197,7 @@ def exception_chaining_demo():
         try:
             1 / 0
         except ZeroDivisionError:
-            raise ValueError("转换失败")  # 隐式设置 __context__
+            raise ValueError("转换失败")
     except ValueError as e:
         print(f"  隐式 __context__: {e.__context__}")
 
@@ -225,14 +224,17 @@ def context_manager_demo():
     # Java 7+: try (Resource r = ...) { ... }  （AutoCloseable）
     class DBConn:
         def __init__(self, name): self.name = name
+
         def __enter__(self):
             print(f"  [enter] 连接: {self.name}")
             return self
+
         def __exit__(self, exc_type, exc_val, exc_tb):
             if exc_type:
                 print(f"  [exit]  异常: {exc_type.__name__}: {exc_val}")
             print(f"  [exit]  关闭: {self.name}")
             return False  # False=不吞异常, True=吞掉
+
         def query(self, sql):
             if "DROP" in sql: raise PermissionError("禁止 DROP!")
             return f"结果: [{sql}]"
@@ -275,23 +277,22 @@ def eafp_vs_lbyl_demo():
     print(f"  电话: {phone}")
     print(f"  最地道: {user.get('phone', '未设置')}")  # dict.get()
 
-    # EAFP 避免 TOCTOU 竞态
-    print("\n--- 文件操作 EAFP（避免竞态）---")
+    # EAFP 避免 TOCTOU 竞态: 直接尝试，失败再处理
     try:
         with open("/tmp/_nonexistent_demo.txt") as f:
             f.read()
     except FileNotFoundError:
-        print("  文件不存在，安全处理")
+        print("  EAFP 文件操作: 不存在则安全处理（无竞态）")
 
     # 鸭子类型 + EAFP
-    print("\n--- 鸭子类型与 EAFP ---")
     class Duck:
         def quack(self): return "嘎嘎!"
+
     for obj in [Duck(), "not_a_duck"]:
         try:
-            print(f"  {type(obj).__name__}: {obj.quack()}")
+            print(f"  鸭子测试 {type(obj).__name__}: {obj.quack()}")
         except AttributeError:
-            print(f"  {type(obj).__name__}: 不会叫")
+            print(f"  鸭子测试 {type(obj).__name__}: 不会叫")
 
 
 # ============================================================
@@ -319,12 +320,10 @@ def warnings_demo():
             print(f"  警告内容: {w.message}")
 
     print("\n  常见警告类型:")
-    for name, desc in [
-        ("DeprecationWarning",  "功能已弃用 (~ @Deprecated)"),
-        ("FutureWarning",       "未来版本行为将改变"),
-        ("UserWarning",         "通用用户警告"),
-        ("RuntimeWarning",      "运行时可疑行为"),
-    ]:
+    for name, desc in [("DeprecationWarning", "功能已弃用 (~ @Deprecated)"),
+                        ("FutureWarning", "未来版本行为将改变"),
+                        ("UserWarning", "通用用户警告"),
+                        ("RuntimeWarning", "运行时可疑行为")]:
         print(f"    {name:<24s} {desc}")
 
 

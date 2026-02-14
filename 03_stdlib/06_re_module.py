@@ -71,7 +71,6 @@ def findall_finditer_demo():
     # 注意坑：findall 有分组时，只返回分组内容！
     pairs = re.findall(r"(\w+?)(\d+\.?\d*)元", text)
     print(f"  findall 有分组: {pairs}")       # 返回元组列表
-
     # finditer：返回匹配对象的迭代器（大数据量时更省内存）
     print("  finditer 迭代:")
     for m in re.finditer(r"\d+\.?\d*", text):
@@ -96,13 +95,11 @@ def named_group_demo():
     # 普通分组（按编号访问）
     m = re.search(r"(\d{4})-(\d{2})-(\d{2})", date_str)
     print(f"  普通分组: groups()={m.groups()}")
-
     # 命名分组（按名称访问，可读性更好）
     pattern = r"(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})"
     m = re.search(pattern, date_str)
     print(f"  命名分组: year={m.group('year')}, month={m.group('month')}")
     print(f"  groupdict() = {m.groupdict()}")   # 返回字典！
-
     # 实战：命名分组 + finditer 解析日志
     log = "[ERROR] 2025-06-15 10:30 - 连接超时 | [WARN] 2025-06-15 10:31 - 重试中"
     log_pat = r"\[(?P<level>\w+)\]\s+(?P<date>[\d-]+)\s+(?P<time>[\d:]+)\s+-\s+(?P<msg>.+?)(?:\s*\||$)"
@@ -133,14 +130,12 @@ def sub_demo():
     # count 参数控制替换次数（类似 Java replaceFirst）
     result = re.sub(r"\d+", "X", "a1b2c3", count=1)
     print(f"  替换一次: {result}")       # aXb2c3
-
     # 用函数作为替换参数（Java 需要 Matcher.appendReplacement 循环）
     def double_number(match):
         return str(int(match.group()) * 2)
 
     result = re.sub(r"\d+", double_number, "苹果3个, 香蕉5个, 西瓜1个")
     print(f"  函数替换(翻倍): {result}")
-
     # subn 返回 (替换结果, 替换次数)
     result, n = re.subn(r"\d+", "#", "a1b2c3d4")
     print(f"  subn: '{result}', 替换了 {n} 次")
@@ -165,7 +160,6 @@ def split_demo():
     # maxsplit 控制分割次数
     result = re.split(r"\s+", "one two three four five", maxsplit=2)
     print(f"  限制次数: {result}")    # ['one', 'two', 'three four five']
-
     # 带分组的 split 会保留分隔符
     result = re.split(r"(\s*[,;]\s*)", "a, b; c")
     print(f"  保留分隔符: {result}")
@@ -198,9 +192,7 @@ def compile_demo():
     emails_text = "联系: zhang@example.com, li@test.org, admin@corp.com.cn, bad@"
     found = email_re.findall(emails_text)
     print(f"  pattern 对象: {email_re}")
-    print(f"  pattern.pattern = '{email_re.pattern}'")
     print(f"  找到的邮箱: {found}")
-
     # 编译后的对象拥有和 re 模块相同的方法
     print(f"\n  编译对象方法:")
     print(f"    .search()  = {email_re.search('test@x.com')}")
@@ -269,6 +261,7 @@ def verbose_demo():
         $
     """, re.VERBOSE)
 
+    print("  VERBOSE 验证 IPv4:")
     for ip in ["192.168.1.1", "10.0.0.255", "256.1.1.1", "1.2.3.4"]:
         status = "valid" if ipv4_pattern.fullmatch(ip) else "invalid"
         print(f"    {ip:>15} -> {status}")

@@ -55,21 +55,20 @@ async def coroutine_run_demo():
 
     # asyncio.run() 是顶层入口，创建事件循环并运行协程
     # 类比 Java: ExecutorService 的 submit + get
+    # 在已有事件循环中用 await 运行子协程
 
-    async def step_one():
-        print("  步骤一: 获取用户信息...")
+    async def get_user():
         await asyncio.sleep(0.2)
         return {"id": 1, "name": "张三"}
 
-    async def step_two(user):
-        print(f"  步骤二: 查询 {user['name']} 的订单...")
+    async def get_orders(user):
         await asyncio.sleep(0.2)
         return [{"order_id": 101, "amount": 99.9}]
 
     # 串行执行——每一步依赖上一步的结果
     start = time.perf_counter()
-    user = await step_one()
-    orders = await step_two(user)
+    user = await get_user()
+    orders = await get_orders(user)
     total = sum(o["amount"] for o in orders)
     elapsed = time.perf_counter() - start
     print(f"  用户: {user['name']}, 订单总额: {total}, 耗时: {elapsed:.2f}s")
@@ -95,15 +94,14 @@ async def gather_demo():
 
     # 串行 vs 并发对比
     start = time.perf_counter()
-    r1 = await call_api("用户服务", 0.3)
-    r2 = await call_api("订单服务", 0.3)
+    await call_api("用户服务", 0.3)
+    await call_api("订单服务", 0.3)
     serial_time = time.perf_counter() - start
     print(f"  串行耗时: {serial_time:.2f}s")
 
     start = time.perf_counter()
     results = await asyncio.gather(
-        call_api("用户服务", 0.3),
-        call_api("订单服务", 0.3),
+        call_api("用户服务", 0.3), call_api("订单服务", 0.3),
     )
     gather_time = time.perf_counter() - start
     print(f"  并发耗时: {gather_time:.2f}s (快了约 {serial_time / gather_time:.1f} 倍)")
@@ -144,23 +142,19 @@ async def create_task_demo():
 
     task1 = asyncio.create_task(background_job("任务A", 0.3))
     task2 = asyncio.create_task(background_job("任务B", 0.2))
-    print(f"  创建后立即查询: task1.done={task1.done()}, task2.done={task2.done()}")
+    print(f"  创建后: task1.done={task1.done()}, task2.done={task2.done()}")
 
     print("  主协程: 做其他工作...")
     await asyncio.sleep(0.1)
-
-    result1 = await task1
-    result2 = await task2
+    result1, result2 = await task1, await task2
     print(f"  task1={result1}, task2={result2}")
 
-    # 取消 Task
-    print("\n  --- Task 取消 ---")
-
+    # 取消 Task（捕获 CancelledError 可做清理）
     async def long_running():
         try:
             await asyncio.sleep(10)
         except asyncio.CancelledError:
-            print("  [长任务] 被取消了，执行清理...")
+            print("  [长任务] 被取消，执行清理...")
             raise
 
     task3 = asyncio.create_task(long_running())
@@ -169,7 +163,7 @@ async def create_task_demo():
     try:
         await task3
     except asyncio.CancelledError:
-        print(f"  task3 已取消, cancelled={task3.cancelled()}")
+        print(f"  task3 cancelled={task3.cancelled()}")
 
 
 # =============================================================================
@@ -191,18 +185,16 @@ async def async_iterator_demo():
             data = [f"page{page}_item{i}" for i in range(3)]
             yield page, data  # async yield
 
-    print("  --- 异步生成器 ---")
+    print("  --- 异步生成器（async for）---")
     async for page_num, items in fetch_pages(3):
         print(f"  第{page_num}页: {items}")
 
-    # 异步迭代器类：实现 __aiter__ 和 __anext__
+    # 异步迭代器类：实现 __aiter__ 和 __anext__（类似 Java Iterator）
     class AsyncCountdown:
         def __init__(self, start):
             self.current = start
-
         def __aiter__(self):
             return self
-
         async def __anext__(self):
             if self.current <= 0:
                 raise StopAsyncIteration
@@ -229,15 +221,14 @@ async def async_queue_demo():
     print("asyncio.Queue 异步队列")
     print("=" * 60)
 
-    # 类比 Java: BlockingQueue，但完全非阻塞
+    # 类比 Java: BlockingQueue，但完全非阻塞，适合协程间通信
 
     queue = asyncio.Queue(maxsize=5)
 
-    async def producer(name, count):
-        for i in range(count):
-            item = f"{name}-消息{i}"
-            await queue.put(item)
-            print(f"  [生产者 {name}] 放入: {item}")
+    async def producer(name, n):
+        for i in range(n):
+            await queue.put(f"{name}-{i}")
+            print(f"  [生产者 {name}] 放入: {name}-{i}")
             await asyncio.sleep(random.uniform(0.05, 0.1))
 
     async def consumer(name):
@@ -255,7 +246,6 @@ async def async_queue_demo():
     await asyncio.gather(
         producer("P1", 3), producer("P2", 3), consumer("C1"), consumer("C2"),
     )
-    print(f"  队列剩余: {queue.qsize()}")
 
 
 # =============================================================================
@@ -274,12 +264,11 @@ async def timeout_demo():
         await asyncio.sleep(5)
         return "慢操作结果"
 
-    print("  --- 慢操作（超时 0.3s）---")
     try:
         result = await asyncio.wait_for(slow_operation(), timeout=0.3)
         print(f"  结果: {result}")
     except asyncio.TimeoutError:
-        print("  超时了！操作被取消")
+        print("  超时了！操作被取消 (0.3s)")
 
     # 带超时的重试模式
     print("\n  --- 带超时的重试模式 ---")
@@ -311,29 +300,27 @@ async def event_loop_demo():
     print("=" * 60)
 
     # 类比 Java: Netty EventLoop / NIO Selector
-    # 类比 JS: Node.js 事件循环
-    # 工作原理: 单线程轮询，遇到 await 挂起，IO 完成后恢复
+    # 工作原理: 单线程轮询，遇到 await 挂起当前任务，执行下一个就绪任务
 
     loop = asyncio.get_running_loop()
     print(f"  当前事件循环: {type(loop).__name__}")
     print(f"  是否在运行: {loop.is_running()}")
 
-    # 演示交替调度
+    # 演示交替调度——await sleep(0) 让出控制权
     async def task_with_id(task_id, steps):
         for step in range(steps):
             print(f"  [Task-{task_id}] 第 {step + 1} 步")
-            await asyncio.sleep(0)  # yield 控制权
+            await asyncio.sleep(0)  # yield 控制权给事件循环
 
     print("\n  --- 事件循环调度（交替执行）---")
     await asyncio.gather(task_with_id("A", 3), task_with_id("B", 3))
 
-    # call_soon / call_later
-    print("\n  --- call_later 延时回调 ---")
+    # call_soon / call_later（底层调度 API）
     result_holder = []
     loop.call_soon(lambda: result_holder.append("立即"))
     loop.call_later(0.1, lambda: result_holder.append("0.1s后"))
     await asyncio.sleep(0.2)
-    print(f"  回调结果: {result_holder}")
+    print(f"\n  call_later 回调结果: {result_holder}")
 
 
 # =============================================================================
@@ -360,19 +347,18 @@ async def real_world_scenario():
         call_microservice("用户中心", 0.2),
         call_microservice("订单系统", 0.3),
         call_microservice("支付网关", 0.15),
-        call_microservice("库存服务", 0.25),
     )
     elapsed = time.perf_counter() - start
     for r in results:
         print(f"  {r['service']}: {r['status']} ({r['ms']}ms)")
-    print(f"  总耗时: {elapsed:.2f}s (最慢服务 0.3s，并发所以总时间约等于最慢的)")
+    print(f"  总耗时: {elapsed:.2f}s (并发，约等于最慢的 0.3s)")
 
     # 限流爬虫（Semaphore 控制并发度）
     print("\n  --- 限流爬虫（Semaphore）---")
-    semaphore = asyncio.Semaphore(3)
+    semaphore = asyncio.Semaphore(3)  # 最多 3 个并发
 
     async def crawl_url(url):
-        async with semaphore:  # 最多 3 个并发
+        async with semaphore:
             print(f"  爬取: {url}")
             await asyncio.sleep(random.uniform(0.1, 0.2))
             return f"{url} -> 200"

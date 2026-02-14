@@ -48,15 +48,11 @@ def _fill_array(arr, start, count):
             arr[start + i] = (start + i) * 10
 
 def _cpu_work(n):
-    total = 0
-    for i in range(n):
-        total += i * i
-    return total
+    return sum(i * i for i in range(n))
 
 def _transform(record):
     name, score = record
-    bonus = sum(i * i for i in range(1000)) % 100
-    return {"name": name, "score": score, "bonus": bonus}
+    return {"name": name, "score": score, "bonus": sum(range(100))}
 
 
 # =============================================================================
@@ -66,13 +62,11 @@ def _transform(record):
 
 def process_creation_demo():
     """创建进程的基本方式"""
-
     print("=" * 60)
     print("1. 创建进程 (Process)")
     print("=" * 60)
 
-    # Java: Thread t = new Thread(runnable); t.start();
-    # Python Process 接口和 Thread 几乎一样，但运行在独立进程
+    # Java: Thread t = new Thread(runnable); t.start();  但这里是独立进程
     print(f"  主进程 PID: {os.getpid()}")
 
     p1 = Process(target=_worker, args=("进程A", 2))
@@ -88,7 +82,6 @@ def process_creation_demo():
         def __init__(self, label):
             super().__init__()
             self.label = label
-
         def run(self):
             print(f"  [子类进程 {self.label}] PID={os.getpid()}")
 
@@ -105,7 +98,6 @@ def process_creation_demo():
 
 def pool_demo():
     """进程池的使用"""
-
     print("\n" + "=" * 60)
     print("2. 进程池 (Pool)")
     print("=" * 60)
@@ -114,7 +106,6 @@ def pool_demo():
     with Pool(processes=2) as pool:
         # 同步调用（阻塞等结果）
         print(f"  apply 同步: {pool.apply(_square, args=(10,))}")
-
         # 异步调用（类似 Java Future）
         future = pool.apply_async(_square, args=(20,))
         print(f"  apply_async: {future.get(timeout=5)}")
@@ -137,7 +128,6 @@ def pool_demo():
 
 def ipc_demo():
     """进程间通信演示"""
-
     print("\n" + "=" * 60)
     print("3. 进程间通信 (Queue, Pipe)")
     print("=" * 60)
@@ -148,7 +138,6 @@ def ipc_demo():
     p = Process(target=_producer, args=(queue, [1, 2, 3]))
     p.start()
     p.join()
-
     while not queue.empty():
         item = queue.get()
         if item is not None:
@@ -171,24 +160,17 @@ def ipc_demo():
 
 def shared_memory_demo():
     """共享内存演示"""
-
     print("\n" + "=" * 60)
     print("4. 共享内存 (Value, Array, Manager)")
     print("=" * 60)
 
     # --- Value（类似 Java AtomicInteger，'i'=int, 'd'=double）---
     print("--- Value 共享变量 ---")
-    counter = Value('i', 0)
-    lock = mp.Lock()
-
-    procs = []
-    for _ in range(4):
-        p = Process(target=_increment, args=(counter, lock, 100))
-        procs.append(p)
-        p.start()
-    for p in procs:
-        p.join()
-    print(f"  4 个进程各加 100 次，最终值: {counter.value}")
+    counter, lock = Value('i', 0), mp.Lock()
+    procs = [Process(target=_increment, args=(counter, lock, 100)) for _ in range(4)]
+    for p in procs: p.start()
+    for p in procs: p.join()
+    print(f"  4 个进程各加 100 次，最终值: {counter.value}")  # 应为 400
 
     # --- Array（共享数组）---
     print("\n--- Array 共享数组 ---")
@@ -222,7 +204,6 @@ def shared_memory_demo():
 
 def map_starmap_demo():
     """map/starmap 并行处理演示"""
-
     print("\n" + "=" * 60)
     print("5. map/starmap 并行处理")
     print("=" * 60)
@@ -259,7 +240,6 @@ def map_starmap_demo():
 
 def gil_comparison_demo():
     """GIL 对多线程 vs 多进程的影响"""
-
     print("\n" + "=" * 60)
     print("6. GIL 对比: 多线程 vs 多进程")
     print("=" * 60)
@@ -268,26 +248,25 @@ def gil_comparison_demo():
     work_size, num_workers = 500_000, 4
 
     # 串行
-    start = time.perf_counter()
-    for _ in range(num_workers):
-        _cpu_work(work_size)
-    serial = time.perf_counter() - start
+    t0 = time.perf_counter()
+    for _ in range(num_workers): _cpu_work(work_size)
+    serial = time.perf_counter() - t0
     print(f"  串行执行: {serial:.3f}s")
 
     # 多线程（受 GIL 限制）
-    start = time.perf_counter()
+    t0 = time.perf_counter()
     threads = [threading.Thread(target=_cpu_work, args=(work_size,))
                for _ in range(num_workers)]
     for t in threads: t.start()
     for t in threads: t.join()
-    t_time = time.perf_counter() - start
+    t_time = time.perf_counter() - t0
     print(f"  多线程:   {t_time:.3f}s (受 GIL 限制)")
 
     # 多进程（突破 GIL）
-    start = time.perf_counter()
+    t0 = time.perf_counter()
     with Pool(processes=num_workers) as pool:
         pool.map(_cpu_work, [work_size] * num_workers)
-    p_time = time.perf_counter() - start
+    p_time = time.perf_counter() - t0
     print(f"  多进程:   {p_time:.3f}s (真正并行)")
 
     print(f"\n  结论:")
@@ -303,7 +282,6 @@ def gil_comparison_demo():
 
 def use_case_demo():
     """适用场景演示"""
-
     print("\n" + "=" * 60)
     print("7. 适用场景：CPU 密集型任务")
     print("=" * 60)
@@ -318,17 +296,14 @@ def use_case_demo():
   │ IO 密集型    │ threading/asyncio │ Thread / CompleteFuture│
   │ 混合型       │ Process + Thread  │ ThreadPool            │
   └─────────────┴──────────────────┴──────────────────────┘
-
   multiprocessing 典型应用:
   - 数值计算、图像/视频处理、数据 ETL、ML 数据预处理""")
 
     # --- 实际示例：并行批量处理 ---
     print("\n--- 实际示例：并行批量处理 ---")
     records = [(f"user_{i}", i * 10) for i in range(8)]
-
     with Pool(processes=2) as pool:
         results = pool.map(_transform, records)
-
     for r in results[:3]:
         print(f"    {r}")
     print(f"    ... 共处理 {len(results)} 条记录")

@@ -79,11 +79,10 @@ def deque_demo():
 
     # --- 旋转（Java ArrayDeque 没有）---
     dq_rotate = deque([1, 2, 3, 4, 5])
-    dq_rotate.rotate(2)            # 右旋 2 步: [4, 5, 1, 2, 3]
-    print(f"右旋 2 步: {dq_rotate}")
+    dq_rotate.rotate(2)                    # 右旋 2 步
+    print(f"右旋 2 步: {dq_rotate}")       # [4, 5, 1, 2, 3]
 
-    # --- maxlen: 固定长度队列（滑动窗口）---
-    # Java 中需要手动维护或用 Guava EvictingQueue
+    # --- maxlen: 固定长度（滑动窗口，类似 Guava EvictingQueue）---
     recent = deque(maxlen=3)
     for log in ["登录", "查询", "修改", "退出"]:
         recent.append(log)
@@ -217,9 +216,7 @@ def ordereddict_demo():
 
     # --- 特有功能 2: popitem 可从两端弹出 ---
     od2 = OrderedDict([("a", 1), ("b", 2), ("c", 3)])
-    last = od2.popitem(last=True)               # 弹末尾
-    first = od2.popitem(last=False)             # 弹开头
-    print(f"\n弹末尾: {last}, 弹开头: {first}, 剩余: {od2}")
+    print(f"\n弹末尾: {od2.popitem(last=True)}, 弹开头: {od2.popitem(last=False)}")
 
     # --- 特有功能 3: 相等性比较考虑顺序 ---
     d1, d2 = {"a": 1, "b": 2}, {"b": 2, "a": 1}
@@ -299,19 +296,15 @@ def chainmap_demo():
     print(f"parents 后 color = {parent_config['color']}")   # green
 
     # --- 实战: 模拟作用域链（类似 LEGB 规则）---
-    builtin_scope = {"print": "<built-in>", "len": "<built-in>"}
-    global_scope = {"my_func": "<function>", "PI": 3.14159}
-    local_scope = {"x": 42, "y": 100}
+    builtin = {"print": "<built-in>", "len": "<built-in>"}
+    global_s = {"my_func": "<function>", "PI": 3.14159}
+    local_s = {"x": 42, "y": 100}
 
-    scope = ChainMap(local_scope, global_scope, builtin_scope)
-    print(f"\n模拟作用域链:")
-    print(f"  x = {scope['x']}")                    # local
-    print(f"  PI = {scope['PI']}")                   # global
-    print(f"  print = {scope['print']}")             # builtin
+    scope = ChainMap(local_s, global_s, builtin)
+    print(f"\n作用域链: x={scope['x']}, PI={scope['PI']}, print={scope['print']}")
 
-    # 局部变量 "遮蔽" 全局变量
-    local_scope["PI"] = 3.14
-    print(f"  遮蔽后 PI = {scope['PI']}")           # 3.14（局部优先）
+    local_s["PI"] = 3.14    # 局部变量 "遮蔽" 全局变量
+    print(f"遮蔽后 PI = {scope['PI']}")             # 3.14（局部优先）
 
 
 # =============================================================================

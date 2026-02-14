@@ -17,8 +17,6 @@ import sys
 # =============================================================================
 
 def basic_dataclass_demo():
-    """@dataclass 自动生成样板代码"""
-
     print("=" * 60)
     print("@dataclass 基础")
     print("=" * 60)
@@ -43,8 +41,6 @@ def basic_dataclass_demo():
 # =============================================================================
 
 def field_defaults_demo():
-    """字段默认值与 field() 高级配置"""
-
     print("\n" + "=" * 60)
     print("字段默认值和 field()")
     print("=" * 60)
@@ -90,8 +86,6 @@ def field_defaults_demo():
 # =============================================================================
 
 def frozen_demo():
-    """frozen=True 创建不可变数据类"""
-
     print("\n" + "=" * 60)
     print("frozen=True 不可变数据类")
     print("=" * 60)
@@ -119,8 +113,6 @@ def frozen_demo():
 # =============================================================================
 
 def post_init_demo():
-    """__post_init__ 在 __init__ 之后自动调用"""
-
     print("\n" + "=" * 60)
     print("__post_init__ 后处理")
     print("=" * 60)
@@ -161,8 +153,6 @@ def post_init_demo():
 # =============================================================================
 
 def inheritance_demo():
-    """dataclass 继承"""
-
     print("\n" + "=" * 60)
     print("dataclass 继承")
     print("=" * 60)
@@ -188,8 +178,6 @@ def inheritance_demo():
 # =============================================================================
 
 def comparison_demo():
-    """三种轻量级数据结构对比"""
-
     print("\n" + "=" * 60)
     print("dataclass vs namedtuple vs TypedDict")
     print("=" * 60)
@@ -221,8 +209,6 @@ def comparison_demo():
 # =============================================================================
 
 def slots_demo():
-    """slots=True 减少内存占用"""
-
     print("\n" + "=" * 60)
     print("slots=True 内存优化 (Python 3.10+)")
     print("=" * 60)
@@ -258,8 +244,6 @@ def slots_demo():
 # =============================================================================
 
 def conversion_demo():
-    """asdict 和 astuple 做数据转换"""
-
     print("\n" + "=" * 60)
     print("asdict / astuple 转换")
     print("=" * 60)

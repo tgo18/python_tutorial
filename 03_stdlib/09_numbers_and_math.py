@@ -28,18 +28,13 @@ def builtin_number_types():
     # --- int: 无限精度整数 ---
     # Java: int(32位)/long(64位) 会溢出，大数需要 BigInteger
     # Python: int 天然无限精度，永不溢出！
-    small = 42
-    big = 2 ** 100                          # Java int/long 早就溢出了
-    huge = 10 ** 1000                       # 一千位数，Python 毫无压力
-    print(f"小整数: {small}, type: {type(small).__name__}")
-    print(f"2^100 = {big}")
-    print(f"10^1000 有 {len(str(huge))} 位数")
-    print(f"100! 有 {len(str(math.factorial(100)))} 位数")  # Java 需要 BigInteger
+    print(f"小整数: 42, type: {type(42).__name__}")
+    print(f"2^100 = {2 ** 100}")                            # Java int/long 早就溢出了
+    print(f"10^1000 有 {len(str(10 ** 1000))} 位数")         # Python 毫无压力
+    print(f"100! 有 {len(str(math.factorial(100)))} 位数")   # Java 需要 BigInteger
 
     # --- float: 64位双精度浮点（等价于 Java double） ---
-    f1 = 3.14
-    f2 = 2.5e10                             # 科学计数法
-    print(f"\nfloat: {f1}, 科学计数法: {f2}")
+    print(f"\nfloat: {3.14}, 科学计数法: {2.5e10}")
     print(f"inf: {float('inf')}, nan: {float('nan')}")
     print(f"nan == nan: {float('nan') == float('nan')}")   # False! NaN 不等于自身
     print(f"浮点陷阱: 0.1 + 0.2 = {0.1 + 0.2}")           # 0.30000000000000004
@@ -106,9 +101,8 @@ def math_module_demo():
     print("=" * 60)
 
     # 常量（Java: Math.PI, Math.E）
-    print(f"math.pi  = {math.pi}")
-    print(f"math.e   = {math.e}")
-    print(f"math.inf = {math.inf}, math.nan = {math.nan}")
+    print(f"math.pi={math.pi}, math.e={math.e}")
+    print(f"math.inf={math.inf}, math.nan={math.nan}")
 
     # 取整（Python 返回 int，Java Math.ceil/floor 返回 double）
     print(f"\n取整:")
@@ -159,16 +153,14 @@ def decimal_module_demo():
     print(f"  Decimal('0.1') = {good}")         # 0.1
 
     # 商品计算示例
-    price = Decimal('19.99')
-    tax_rate = Decimal('0.08')
+    price, tax_rate = Decimal('19.99'), Decimal('0.08')
     subtotal = price * 3
     tax = subtotal * tax_rate
-    print(f"\n商品计算: 单价={price}, 数量=3")
-    print(f"  小计: {subtotal}, 税额: {tax}, 总计: {subtotal + tax}")
+    print(f"\n商品计算: 单价={price} x 3 = {subtotal}, 税={tax}")
 
     # 精度控制（Java: setScale(2, RoundingMode.HALF_UP)）
     rounded = tax.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-    print(f"  税额四舍五入: {rounded}")
+    print(f"  税额四舍五入到分: {rounded}")
 
     # 全局/局部精度
     print(f"\n精度控制 (当前={decimal.getcontext().prec}位):")
@@ -223,16 +215,13 @@ def base_conversion_demo():
     print("6. 进制转换")
     print("=" * 60)
 
-    num = 255
     # 十进制 -> 其他进制（Java: Integer.toBinaryString() 等）
-    print(f"十进制 {num}: bin={bin(num)}, oct={oct(num)}, hex={hex(num)}")
+    print(f"十进制 255: bin={bin(255)}, oct={oct(255)}, hex={hex(255)}")
 
     # 其他进制 -> 十进制（Java: Integer.parseInt("ff", 16)）
     print(f"\n其他进制 -> 十进制:")
-    print(f"  int('11111111', 2) = {int('11111111', 2)}")
-    print(f"  int('377', 8)     = {int('377', 8)}")
-    print(f"  int('ff', 16)     = {int('ff', 16)}")
-    print(f"  int('0xff', 16)   = {int('0xff', 16)}")
+    print(f"  int('11111111', 2)={int('11111111', 2)}, int('377', 8)={int('377', 8)}")
+    print(f"  int('ff', 16)={int('ff', 16)}, int('0xff', 16)={int('0xff', 16)}")
 
     # 字面量
     print(f"\n字面量: 0b11111111={0b11111111}, 0o377={0o377}, 0xFF={0xFF}")
@@ -240,12 +229,8 @@ def base_conversion_demo():
     # 位运算（和 Java 语法一致）
     a, b = 0b1010, 0b1100
     print(f"\n位运算 (a=0b1010, b=0b1100):")
-    print(f"  a & b  = {bin(a & b)}")         # AND
-    print(f"  a | b  = {bin(a | b)}")         # OR
-    print(f"  a ^ b  = {bin(a ^ b)}")         # XOR
-    print(f"  ~a     = {bin(~a)}")            # NOT
-    print(f"  a << 2 = {bin(a << 2)}")        # 左移
-    print(f"  a >> 1 = {bin(a >> 1)}")        # 右移
+    print(f"  AND: {bin(a & b)}, OR: {bin(a | b)}, XOR: {bin(a ^ b)}")
+    print(f"  NOT: {bin(~a)}, 左移: {bin(a << 2)}, 右移: {bin(a >> 1)}")
 
 
 # =============================================================================

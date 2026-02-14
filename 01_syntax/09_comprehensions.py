@@ -27,12 +27,6 @@ def list_comprehension_demo():
     numbers = [1, 2, 3, 4, 5]
     squares = [x * x for x in numbers]
     print(f"  平方: {squares}")
-
-    # 等价的传统写法（推导式是它的语法糖）
-    squares_loop = []
-    for x in numbers:
-        squares_loop.append(x * x)
-
     # 字符串处理 & 类型转换
     names = ["alice", "bob", "charlie"]
     print(f"  大写: {[name.upper() for name in names]}")
@@ -78,10 +72,8 @@ def nested_comprehension_demo():
 
     # Java: matrix.stream().flatMap(Collection::stream).collect(...)
     matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
-    flat = [x for row in matrix for x in row]
+    flat = [x for row in matrix for x in row]  # 外层在前，和循环顺序一致
     print(f"  扁平化: {flat}")
-    # 阅读顺序和循环一致: for row in matrix -> for x in row
-
     # 笛卡尔积
     combos = [(c, s) for c in ["红", "蓝"] for s in ["S", "M", "L"]]
     print(f"  组合: {combos}")
@@ -113,16 +105,13 @@ def dict_comprehension_demo():
     # 键值互换
     original = {"a": 1, "b": 2, "c": 3}
     print(f"  键值互换: {({v: k for k, v in original.items()})}")
-
     # 带过滤
     scores = {"alice": 85, "bob": 62, "charlie": 91, "david": 58}
     passed = {name: score for name, score in scores.items() if score >= 70}
     print(f"  及格的: {passed}")
-
     # 从两个列表构建字典（类似 Java 的 zip + toMap）
     person = {k: v for k, v in zip(["name", "age", "city"], ["张三", 30, "北京"])}
     print(f"  构建字典: {person}")
-
     # 分数等级转换
     grades = {
         name: ("优" if s >= 90 else "良" if s >= 70 else "差")
@@ -149,7 +138,6 @@ def set_comprehension_demo():
     names = ["alice", "anna", "bob", "bella", "charlie"]
     initials = {name[0].upper() for name in names}
     print(f"  首字母集合: {sorted(initials)}")
-
     # 两个列表的共同元素的平方
     a, b = [1, 2, 3, 4, 5], [3, 4, 5, 6, 7]
     common_squares = {x * x for x in a if x in set(b)}
@@ -166,9 +154,8 @@ def generator_expression_demo():
     print("生成器表达式 (Generator Expression)")
     print("=" * 60)
 
-    # [x for x in ...] 立即生成所有元素，占内存
-    # (x for x in ...) 惰性求值，按需生成
-    # Java 类比: Stream 本身就是惰性的，collect 才触发求值
+    # [x for ...] 立即创建列表 | (x for ...) 惰性求值，按需生成
+    # Java 类比: Stream 本身惰性，collect 才触发求值
     list_comp = [x * x for x in range(10)]
     gen_exp = (x * x for x in range(10))
     print(f"  列表推导式: {list_comp} -> {type(list_comp).__name__}")
@@ -180,7 +167,6 @@ def generator_expression_demo():
     print(f"  最长单词长度: {max(len(w) for w in ['python', 'java', 'go'])}")
     print(f"  包含负数: {any(x < 0 for x in [1, -2, 3])}")
     print(f"  全部为正: {all(x > 0 for x in [1, 2, 3])}")
-
     # 内存对比: 处理大数据时差异巨大
     list_size = sys.getsizeof([x for x in range(10000)])
     gen_size = sys.getsizeof(x for x in range(10000))
@@ -199,18 +185,15 @@ def comprehension_vs_map_filter_demo():
     print("=" * 60)
 
     numbers = [1, 2, 3, 4, 5]
-
     # --- map 对比 ---
     print(f"  推导式平方: {[x ** 2 for x in numbers]}")
     print(f"  map 平方:   {list(map(lambda x: x ** 2, numbers))}")
     # map + 已有函数时，map 更简洁
     print(f"  map(str):   {list(map(str, numbers))}")
     print(f"  推导str:    {[str(x) for x in numbers]}")
-
     # --- filter 对比 ---
     print(f"  推导式偶数: {[x for x in numbers if x % 2 == 0]}")
     print(f"  filter偶数: {list(filter(lambda x: x % 2 == 0, numbers))}")
-
     # --- 选择建议 ---
     print(f"\n  何时用推导式: map+filter 组合时 / 表达式简单时")
     print(f"  何时用 map:   已有现成函数 map(int, strings)")
@@ -231,7 +214,6 @@ def practical_examples_demo():
     raw_data = ["  Alice  ", "BOB", "", "  charlie ", None, "David"]
     cleaned = [s.strip().title() for s in raw_data if s and s.strip()]
     print(f"  清洗后: {cleaned}")
-
     # --- 场景2: JSON 数据提取（常见于 API 开发）---
     print("\n--- 数据提取 ---")
     users = [
@@ -242,7 +224,6 @@ def practical_examples_demo():
     print(f"  活跃用户: {[u['name'] for u in users if u['active']]}")
     name_age = {u["name"]: u["age"] for u in users}
     print(f"  姓名年龄: {name_age}")
-
     # --- 场景3: 分组（类似 Java Collectors.groupingBy）---
     print("\n--- 分组 ---")
     words = ["apple", "ant", "banana", "bear", "cat", "cherry"]
@@ -251,7 +232,6 @@ def practical_examples_demo():
         by_first[w[0]].append(w)
     grouped = {k: v for k, v in sorted(by_first.items())}
     print(f"  按首字母分组: {grouped}")
-
     # --- 场景4: 矩阵转置 ---
     print("\n--- 矩阵转置 ---")
     matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]

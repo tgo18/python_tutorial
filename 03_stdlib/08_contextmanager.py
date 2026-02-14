@@ -41,10 +41,7 @@ def with_basics_demo():
     print(f"  多资源同时关闭: src={src.closed}, dst={dst.closed}")
     os.remove(tmp_path)
 
-    # with 等价于 try-finally
-    # f = open(path)
-    # try:     data = f.read()
-    # finally: f.close()
+    # with 等价于: f = open(path) / try: f.read() / finally: f.close()
 
 
 # =============================================================================
@@ -147,13 +144,7 @@ def suppress_demo():
     print("4. contextlib.suppress（忽略特定异常）")
     print("=" * 60)
 
-    # 传统写法：
-    # try:
-    #     os.remove("file.txt")
-    # except FileNotFoundError:
-    #     pass
-
-    # suppress 更优雅
+    # 传统 try-except-pass 的优雅替代
     with contextlib.suppress(FileNotFoundError):
         os.remove("/tmp/_nonexistent_suppress.txt")
     print("  suppress(FileNotFoundError): 静默忽略")
@@ -184,15 +175,13 @@ def redirect_stdout_demo():
         print("这行也是")
     print(f"  捕获内容: {buf.getvalue().strip()!r}")
 
-    # redirect_stderr 捕获错误输出
+    # 也有 redirect_stderr
     import sys
     err_buf = io.StringIO()
     with contextlib.redirect_stderr(err_buf):
         sys.stderr.write("错误输出\n")
     print(f"  捕获 stderr: {err_buf.getvalue().strip()!r}")
-
-    # Java: System.setOut(new PrintStream(baos)) + 手动恢复
-    # Python 的 with 自动恢复，更安全
+    # Java: System.setOut(new PrintStream(baos)) + 手动恢复，Python 自动恢复
 
 
 # =============================================================================
@@ -219,14 +208,12 @@ def exit_stack_demo():
             print(f"  {os.path.basename(f.name)}: {f.read()}")
     print(f"  全部关闭? {all(f.closed for f in files)}")  # LIFO 关闭
 
-    # 注册清理回调
-    print("\n--- 清理回调（LIFO 顺序）---")
+    # 注册清理回调（LIFO 顺序执行）
+    print("\n--- 清理回调 ---")
     with contextlib.ExitStack() as stack:
         stack.callback(print, "  回调C: 最先注册，最后执行")
-        stack.callback(print, "  回调B: 第二")
-        stack.callback(print, "  回调A: 最后注册，最先执行")
+        stack.callback(print, "  回调A: 最后注册，最先执行（LIFO）")
         print("  with 块执行中...")
-
     for p in paths:
         os.remove(p)
 
@@ -321,7 +308,6 @@ def custom_context_managers_demo():
 
 def async_context_manager_intro():
     """async with 异步上下文管理器简介"""
-
     print("\n" + "=" * 60)
     print("8. async with 异步上下文管理器简介")
     print("=" * 60)
@@ -333,20 +319,14 @@ def async_context_manager_intro():
     print("        async def __aexit__(...):     await conn.close()")
 
     print("\n  装饰器方式: @contextlib.asynccontextmanager")
-    print("    @asynccontextmanager")
     print("    async def async_db(host):")
     print("        conn = await connect(host)")
-    print("        try:    yield conn")
-    print("        finally: await conn.close()")
-
+    print("        try: yield conn / finally: await conn.close()")
     print("\n  使用: async with async_db('host') as conn: ...")
 
     # Java 对比
-    print("\n  Java 对比:")
-    print("    Java try-with-resources 不支持异步")
-    print("    需要 CompletableFuture 手动管理")
-
-    print("\n  常见场景: aiohttp / aiofiles / asyncpg / motor")
+    print("\n  Java: try-with-resources 不支持异步，需 CompletableFuture")
+    print("  常见场景: aiohttp / aiofiles / asyncpg / motor")
 
 
 # =============================================================================

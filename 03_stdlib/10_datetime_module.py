@@ -28,23 +28,21 @@ def date_time_objects_demo():
     print("1. date, time, datetime 对象")
     print("=" * 60)
 
-    # --- date: 只有日期 (Java: LocalDate.of(2025, 6, 15)) ---
+    # date: 只有日期 (Java: LocalDate.of(2025, 6, 15))
     d = date(2025, 6, 15)
     print(f"date: {d}  year={d.year}, month={d.month}, day={d.day}")
     print(f"  weekday={d.weekday()} (0=周一)  isoweekday={d.isoweekday()} (1=周一)")
 
-    # --- time: 只有时间 (Java: LocalTime.of(14, 30, 45)) ---
+    # time: 只有时间 (Java: LocalTime.of(14, 30, 45))
     t = time(14, 30, 45, 123456)       # 时, 分, 秒, 微秒
     print(f"time: {t}  microsecond={t.microsecond}")  # Java 用 getNano()
 
-    # --- datetime: 日期+时间 (Java: LocalDateTime.of(...)) ---
+    # datetime: 日期+时间 (Java: LocalDateTime.of(...))
     dt = datetime(2025, 6, 15, 14, 30, 45)
-    print(f"datetime: {dt}")
-    print(f"  date()={dt.date()}, time()={dt.time()}")
+    print(f"datetime: {dt}  date()={dt.date()}, time()={dt.time()}")
 
     # 组合 (Java: LocalDateTime.of(localDate, localTime))
-    combined = datetime.combine(d, time(9, 0))
-    print(f"  combine: {combined}")
+    print(f"  combine: {datetime.combine(d, time(9, 0))}")
 
 
 # ============================================================
@@ -65,13 +63,10 @@ def creation_demo():
 
     # 构造函数 (Java: LocalDateTime.of(year, month, ...))
     dt = datetime(2025, 1, 1, 0, 0, 0)
-    print(f"\n构造函数: {dt}")
+    print(f"构造函数: {dt}")
 
     # replace 返回新对象 (Java: localDateTime.withYear(2026))
-    dt2 = dt.replace(year=2026, month=6)
-    print(f"replace:  {dt2}  (原对象不变: {dt})")
-    print(f"datetime.min = {datetime.min}")
-    print(f"datetime.max = {datetime.max}")
+    print(f"replace:  {dt.replace(year=2026, month=6)}  (原对象不变: {dt})")
 
 
 # ============================================================
@@ -184,18 +179,16 @@ def timestamp_demo():
     dt = datetime(2025, 6, 15, 14, 30, 45)
     ts = dt.timestamp()
     print(f"datetime -> 时间戳: {dt} -> {ts}")
-    print(f"  注意: Python 返回秒(float)，Java 通常用毫秒(long)")
+    print(f"  Python 返回秒(float)，Java 通常用毫秒(long)")
 
     # 时间戳 -> datetime (Java: Instant.ofEpochSecond(ts))
     print(f"时间戳 -> datetime: {datetime.fromtimestamp(ts)}")
     print(f"时间戳 -> UTC:      {datetime.fromtimestamp(ts, tz=timezone.utc)}")
-
-    # 当前时间戳
-    print(f"\n当前时间戳: {time_mod.time()}")
+    print(f"当前时间戳: {time_mod.time()}")
 
     # Java 毫秒时间戳 (System.currentTimeMillis())
     java_ms = 1750000000000
-    print(f"Java 毫秒 {java_ms} -> {datetime.fromtimestamp(java_ms / 1000)}")
+    print(f"\nJava 毫秒 {java_ms} -> {datetime.fromtimestamp(java_ms / 1000)}")
     print("  技巧: Java毫秒 / 1000 = Python秒")
 
 
@@ -245,19 +238,14 @@ def utc_conversion_demo():
     # UTC -> 本地 (Java: utcTime.withZoneSameInstant(zoneId))
     utc_time = datetime(2025, 6, 15, 6, 0, 0, tzinfo=timezone.utc)
     local_time = utc_time.astimezone(shanghai)
-    print(f"UTC {utc_time} -> 上海 {local_time}")
-
-    # 本地 -> UTC
-    back = local_time.astimezone(timezone.utc)
-    print(f"上海 {local_time} -> UTC {back}")
+    print(f"UTC {utc_time}")
+    print(f" -> 上海 {local_time}")
+    print(f" -> 转回 UTC {local_time.astimezone(timezone.utc)}")
 
     # 给 naive 添加时区 (Java: localDateTime.atZone(zoneId))
     naive = datetime(2025, 6, 15, 14, 0, 0)
     aware = naive.replace(tzinfo=shanghai)
-    print(f"\nnaive->aware: {aware}")
-    print(f"  转 UTC: {aware.astimezone(timezone.utc)}")
-
-    # 偏移量 (Java: zonedDateTime.getOffset())
+    print(f"\nnaive->aware: {aware}  -> UTC: {aware.astimezone(timezone.utc)}")
     print(f"  UTC偏移: {local_time.utcoffset()}, 时区名: {local_time.tzname()}")
 
 
@@ -276,17 +264,14 @@ def iso_format_demo():
     dt = datetime(2025, 6, 15, 14, 30, 45)
     shanghai = ZoneInfo("Asia/Shanghai")
 
-    print(f"isoformat(): {dt.isoformat()}")
     aware_dt = dt.replace(tzinfo=shanghai)
-    print(f"带时区:      {aware_dt.isoformat()}")
-    print(f"UTC:         {aware_dt.astimezone(timezone.utc).isoformat()}")
-    print(f"空格分隔:    {dt.isoformat(sep=' ')}")
+    print(f"isoformat():   {dt.isoformat()}")
+    print(f"带时区:        {aware_dt.isoformat()}")
+    print(f"UTC:           {aware_dt.astimezone(timezone.utc).isoformat()}")
 
     # 解析 ISO (Java: LocalDateTime.parse("..."))
-    for s in ["2025-06-15T14:30:45", "2025-06-15T14:30:45+08:00"]:
-        print(f"  parse '{s}' -> {datetime.fromisoformat(s)}")
-
-    print(f"  date parse '2025-06-15' -> {date.fromisoformat('2025-06-15')}")
+    for s in ["2025-06-15T14:30:45", "2025-06-15T14:30:45+08:00", "2025-06-15"]:
+        print(f"  parse '{s}' -> {datetime.fromisoformat(s) if 'T' in s else date.fromisoformat(s)}")
     print("  注: Python 3.11+ 支持 'Z' 后缀，低版本用 '+00:00'")
 
 
@@ -381,7 +366,7 @@ def practical_scenarios():
     print("\n" + "-" * 60)
     print("Python datetime vs Java java.time 对照表:")
     print("-" * 60)
-    pairs = [
+    for py, jv in [
         ("date",                      "LocalDate"),
         ("time",                      "LocalTime"),
         ("datetime (naive)",          "LocalDateTime"),
@@ -391,12 +376,10 @@ def practical_scenarios():
         ("ZoneInfo('Asia/Shanghai')", "ZoneId.of('Asia/Shanghai')"),
         ("dt.timestamp()",            "instant.getEpochSecond()"),
         ("datetime.fromtimestamp()",  "Instant.ofEpochSecond()"),
-        ("strftime('%Y-%m-%d')",      "fmt.format(dt)"),
-        ("strptime(s, fmt)",          "LocalDateTime.parse(s, fmt)"),
+        ("strftime / strptime",       "DateTimeFormatter"),
         ("dt.isoformat()",            "dt.toString()"),
         ("fromisoformat(s)",          "LocalDateTime.parse(s)"),
-    ]
-    for py, jv in pairs:
+    ]:
         print(f"  {py:<30s} | {jv}")
 
 
