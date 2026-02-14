@@ -168,12 +168,8 @@ def format_demo():
     print("5. 日志格式化")
     print("=" * 60)
 
-    # Python 字段              Java Logback Pattern
-    # %(asctime)s              %d{yyyy-MM-dd HH:mm:ss}
-    # %(name)s                 %logger
-    # %(levelname)s            %level / %(message)s  %msg
-    # %(filename)s:%(lineno)d  %file:%line
-    # %(threadName)s           %thread
+    # Python 字段 -> Java Logback:  asctime->%d  name->%logger  levelname->%level
+    #   message->%msg  filename:lineno->%file:%line  threadName->%thread
     formats = {
         "简洁": "%(levelname)s - %(message)s",
         "标准": "%(asctime)s [%(levelname)-8s] %(name)s - %(message)s",
@@ -204,9 +200,7 @@ def multi_module_demo():
     print("=" * 60)
 
     # Java: LoggerFactory.getLogger(UserService.class);
-    # Python: logging.getLogger(__name__)
-    # 名称用 . 分隔形成层级（类似 Java 包名）
-
+    # Python: logging.getLogger(__name__)  — 名称用 . 分隔（类似 Java 包名）
     parent = logging.getLogger("webapp")
     parent.setLevel(logging.DEBUG)
     ph = logging.StreamHandler(sys.stdout)
@@ -261,8 +255,7 @@ def best_practices():
     logger.addHandler(h)
 
     # [1] 每个模块用 __name__
-    print("  [1] logger = logging.getLogger(__name__)")
-    print("      Java: LoggerFactory.getLogger(MyClass.class)")
+    print("  [1] logger = logging.getLogger(__name__)  # Java: getLogger(Class)")
 
     # [2] % 格式化（惰性求值）优于 f-string
     logger.info("用户 %d 操作成功", 42)
@@ -287,14 +280,11 @@ def best_practices():
     ctx.removeHandler(ctx_h)
     ctx.propagate = True
 
-    # [5] 应用入口统一配置
-    print("\n  [5] 入口配置（类似 logback.xml）:")
-    print("    logging.basicConfig(level=logging.INFO,")
-    print("        format='%(asctime)s [%(levelname)s] %(name)s - %(message)s')")
+    # [5] 应用入口统一配置（类似 logback.xml）
+    print("\n  [5] logging.basicConfig(level=INFO, format='...')  # 入口配置")
 
-    # [6] dictConfig 生产级配置
-    print("\n  [6] dictConfig 集中管理:")
-    print("    logging.config.dictConfig({'version': 1, ...})")
+    # [6] dictConfig 生产级配置（对比 logback.xml 的声明式配置）
+    print("  [6] logging.config.dictConfig({...})  # 生产推荐")
 
     logger.removeHandler(h)
 

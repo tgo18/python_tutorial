@@ -22,7 +22,6 @@ def basic_dataclass_demo():
     print("=" * 60)
 
     # Java: public record User(String name, int age, String email) {}
-    # 或 Lombok: @Data public class User { ... }
     @dataclass
     class User:
         name: str
@@ -60,7 +59,7 @@ def field_defaults_demo():
     class Team:
         name: str
         members: list[str] = field(default_factory=list)   # 正确
-        # members: list = []  # 错误! 所有实例会共享同一个列表
+        # members: list = []  # 错误! 所有实例共享同一个列表
 
     t1, t2 = Team("后端组"), Team("前端组")
     t1.members.append("张三")
@@ -103,8 +102,7 @@ def frozen_demo():
     except FrozenInstanceError:
         print(f"  修改失败: FrozenInstanceError")
 
-    # frozen 实例可做 dict key 或放入 set
-    points = {Point(0, 0), Point(1, 1), Point(0, 0)}
+    points = {Point(0, 0), Point(1, 1), Point(0, 0)}  # 可放入 set
     print(f"  set 去重: {points}")
 
 
@@ -121,7 +119,7 @@ def post_init_demo():
     class Rectangle:
         width: float
         height: float
-        area: float = field(init=False)  # 不出现在 __init__ 参数中
+        area: float = field(init=False)
 
         def __post_init__(self):
             if self.width <= 0 or self.height <= 0:
@@ -134,7 +132,7 @@ def post_init_demo():
     except ValueError as e:
         print(f"  验证失败: {e}")
 
-    # InitVar: 只用于初始化、不存为字段的参数
+    # InitVar: 只在 __init__ 接收，不存为字段
     @dataclass
     class UserProfile:
         username: str
@@ -170,7 +168,7 @@ def inheritance_demo():
 
     user = UserEntity(id=1, name="张三", email="zhang@test.com")
     print(f"  user: {user}")
-    print(f"  isinstance(user, BaseEntity): {isinstance(user, BaseEntity)}")
+    print(f"  isinstance: {isinstance(user, BaseEntity)}")
 
 
 # =============================================================================
@@ -195,13 +193,10 @@ def comparison_demo():
         name: str
         age: int
 
-    print(f"  dataclass:  {DC_User('张三', 30)}  | 可变=True")
-    print(f"  namedtuple: {NT_User('张三', 30)}  | 可变=False")
-    print(f"  TypedDict:  {{'name': '张三', 'age': 30}}  | 本质是 dict")
-    print("\n  选择指南:")
-    print("    dataclass  -> 需要方法、可变、完整类功能")
-    print("    namedtuple -> 不可变、轻量、元组兼容")
-    print("    TypedDict  -> dict/JSON 交互、API 响应类型")
+    print(f"  dataclass:  {DC_User('张三', 30)}  | 可变")
+    print(f"  namedtuple: {NT_User('张三', 30)}  | 不可变")
+    print(f"  TypedDict:  {{'name': '张三', 'age': 30}}  | 本质 dict")
+    print("  选择: dataclass=完整类 / namedtuple=轻量不可变 / TypedDict=JSON交互")
 
 
 # =============================================================================
@@ -214,10 +209,9 @@ def slots_demo():
     print("=" * 60)
 
     if sys.version_info < (3, 10):
-        print("  需要 Python 3.10+，当前版本不支持")
+        print("  需要 Python 3.10+，跳过")
         return
 
-    # Java 对象默认固定字段; Python 默认用 __dict__（灵活但耗内存）
     @dataclass
     class RegularPoint:
         x: float
@@ -231,7 +225,7 @@ def slots_demo():
     rp, sp = RegularPoint(1.0, 2.0), SlottedPoint(1.0, 2.0)
     print(f"  普通有 __dict__: {hasattr(rp, '__dict__')}")
     print(f"  slots 无 __dict__: {hasattr(sp, '__dict__')}")
-    rp.z = 3.0  # 普通可以动态加属性
+    rp.z = 3.0
     try:
         sp.z = 3.0
     except AttributeError as e:
@@ -260,10 +254,9 @@ def conversion_demo():
         address: Address
 
     emp = Employee("张三", 30, Address("北京", "长安街"))
-    d = asdict(emp)       # 递归转字典（方便 JSON 序列化）
+    d = asdict(emp)
     print(f"  asdict:  {d}")
     print(f"  astuple: {astuple(emp)}")
-
     import json
     print(f"  JSON: {json.dumps(d, ensure_ascii=False)}")
     restored = Employee(d["name"], d["age"], Address(**d["address"]))
@@ -275,8 +268,6 @@ def conversion_demo():
 # =============================================================================
 
 def dto_vo_demo():
-    """模拟 Java 中常见的 DTO/VO 模式"""
-
     print("\n" + "=" * 60)
     print("实际应用：DTO / VO 模式")
     print("=" * 60)
@@ -312,8 +303,7 @@ def dto_vo_demo():
         def to_response(self, status: str = "CREATED") -> OrderResponse:
             return OrderResponse(
                 order_id=self.id or 0, product_name=self.product_name,
-                total_price=self.total_price, status=status,
-            )
+                total_price=self.total_price, status=status)
 
     # 模拟流程: Request DTO -> Entity -> Response VO
     req = CreateOrderRequest(product_id=1001, quantity=2)

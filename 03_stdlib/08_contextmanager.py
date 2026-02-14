@@ -35,12 +35,11 @@ def with_basics_demo():
     print(f"  文件内容: {content.strip()}")
     print(f"  文件已关闭? {f.closed}")  # True
 
-    # 同时管理多个资源
+    # 同时管理多个资源（Python 3.10+ 可用括号分组）
     with open(tmp_path, "r") as src, open(os.devnull, "w") as dst:
         dst.write(src.read())
     print(f"  多资源同时关闭: src={src.closed}, dst={dst.closed}")
     os.remove(tmp_path)
-
     # with 等价于: f = open(path) / try: f.read() / finally: f.close()
 
 
@@ -49,10 +48,8 @@ def with_basics_demo():
 # =============================================================================
 
 class ManagedResource:
-    """
-    Java 对比: implements AutoCloseable { void close(); }
-    Python 的 __exit__ 更强大：能接收异常信息并决定是否吞掉
-    """
+    """Java 对比: implements AutoCloseable { void close(); }
+    Python __exit__ 更强大：能接收异常信息并决定是否吞掉"""
 
     def __init__(self, name: str):
         self.name = name
@@ -63,8 +60,7 @@ class ManagedResource:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """离开 with 块时调用（无论是否异常）
-        返回 True 吞掉异常，False 继续传播"""
+        """离开时调用; 返回 True 吞异常, False 继续传播"""
         if exc_type:
             print(f"  [exit]  异常: {exc_type.__name__}: {exc_val}")
         print(f"  [exit]  关闭: {self.name}")
@@ -86,7 +82,6 @@ def enter_exit_demo():
     with ManagedResource("DB连接") as res:
         print(f"  {res.do_work()}")
 
-    # 异常——__exit__ 仍然被调用
     print("\n--- 异常（资源仍被清理）---")
     try:
         with ManagedResource("文件句柄") as res:
@@ -121,7 +116,7 @@ def contextmanager_decorator_demo():
         print(f"  使用连接: connected={conn['connected']}")
     print(f"  离开后: connected={conn['connected']}")
 
-    # 另一个例子：用 yield 方式写计时器
+    # 用 yield 方式写日志块
     @contextlib.contextmanager
     def log_block(name):
         print(f"  >> 进入 {name}")
@@ -130,7 +125,6 @@ def contextmanager_decorator_demo():
 
     with log_block("业务逻辑"):
         print(f"     执行中...")
-
     # Java 没有等价写法——必须写完整的类实现 AutoCloseable
 
 
@@ -153,9 +147,7 @@ def suppress_demo():
     with contextlib.suppress(FileNotFoundError, PermissionError):
         os.remove("/tmp/_nonexistent_protected.txt")
     print("  suppress 多种异常: 同样静默")
-
-    # Java 对比: 空 catch 块（被认为是反模式）
-    # 注意：不要 suppress(Exception)——那是在掩盖 bug
+    # Java 对比: 空 catch 块（反模式）; 注意别 suppress(Exception)
 
 
 # =============================================================================
@@ -168,7 +160,6 @@ def redirect_stdout_demo():
     print("5. contextlib.redirect_stdout")
     print("=" * 60)
 
-    # 将 print 输出捕获到 StringIO
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf):
         print("这行被捕获了")
@@ -194,24 +185,21 @@ def exit_stack_demo():
     print("6. ExitStack（动态管理多个上下文）")
     print("=" * 60)
 
-    # 场景：需要打开数量不定的资源
+    # 场景：打开数量不定的资源（不能硬编码 with a, b, c）
     tmp_dir = tempfile.gettempdir()
     paths = [os.path.join(tmp_dir, f"_stack_{i}.txt") for i in range(3)]
     for p in paths:
         with open(p, "w") as f:
             f.write(f"内容-{os.path.basename(p)}")
-
-    # ExitStack 动态管理
     with contextlib.ExitStack() as stack:
         files = [stack.enter_context(open(p)) for p in paths]
         for f in files:
             print(f"  {os.path.basename(f.name)}: {f.read()}")
     print(f"  全部关闭? {all(f.closed for f in files)}")  # LIFO 关闭
 
-    # 注册清理回调（LIFO 顺序执行）
-    print("\n--- 清理回调 ---")
+    # 注册清理回调（LIFO 顺序）
     with contextlib.ExitStack() as stack:
-        stack.callback(print, "  回调C: 最先注册，最后执行")
+        stack.callback(print, "  回调B: 最先注册，最后执行")
         stack.callback(print, "  回调A: 最后注册，最先执行（LIFO）")
         print("  with 块执行中...")
     for p in paths:
@@ -255,10 +243,7 @@ class DatabaseContext:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if exc_type:
-            print(f"  [DB] 回滚（{exc_val}）")
-        else:
-            print(f"  [DB] 提交事务")
+        print(f"  [DB] {'回滚' if exc_type else '提交'}事务")
         print(f"  [DB] 关闭连接")
         return False
 
@@ -281,18 +266,16 @@ def custom_context_managers_demo():
     # 临时目录
     print("\n--- 临时目录 ---")
     with temp_directory("demo_") as tmp:
-        tmp_file = os.path.join(tmp, "data.txt")
-        with open(tmp_file, "w") as f:
+        with open(os.path.join(tmp, "data.txt"), "w") as f:
             f.write("临时数据")
         print(f"  目录存在: {os.path.exists(tmp)}")
     print(f"  退出后: {os.path.exists(tmp)}")
 
-    # 数据库（正常提交）
+    # 数据库——正常提交
     print("\n--- 数据库（正常）---")
     with DatabaseContext("mydb") as db:
         db.execute("INSERT INTO users VALUES ('张三')")
-
-    # 数据库（异常回滚）
+    # 数据库——异常回滚
     print("\n--- 数据库（异常回滚）---")
     try:
         with DatabaseContext("mydb") as db:
@@ -312,20 +295,17 @@ def async_context_manager_intro():
     print("8. async with 异步上下文管理器简介")
     print("=" * 60)
 
-    # 异步上下文管理器使用 __aenter__ / __aexit__
-    print("  类方式: 实现 __aenter__ / __aexit__")
+    # 异步上下文管理器: __aenter__ / __aexit__（对应 async with）
+    print("  类方式——实现 __aenter__ / __aexit__:")
     print("    class AsyncDB:")
     print("        async def __aenter__(self):  return await connect()")
     print("        async def __aexit__(...):     await conn.close()")
-
-    print("\n  装饰器方式: @contextlib.asynccontextmanager")
+    print("\n  装饰器方式——@contextlib.asynccontextmanager:")
     print("    async def async_db(host):")
     print("        conn = await connect(host)")
     print("        try: yield conn / finally: await conn.close()")
     print("\n  使用: async with async_db('host') as conn: ...")
-
-    # Java 对比
-    print("\n  Java: try-with-resources 不支持异步，需 CompletableFuture")
+    print("  Java: try-with-resources 不支持异步，需 CompletableFuture")
     print("  常见场景: aiohttp / aiofiles / asyncpg / motor")
 
 

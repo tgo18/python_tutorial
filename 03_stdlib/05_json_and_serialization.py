@@ -38,20 +38,18 @@ def json_basics_demo():
         "active": True, "score": None,  # None -> JSON null
     }
 
-    # 序列化: Python 对象 -> JSON 字符串
-    print(f"  默认: {json.dumps(user)[:60]}...")
+    # 序列化: Python 对象 -> JSON 字符串（dumps = dump to string）
+    print(f"  dumps(): {json.dumps(user)[:60]}...")
 
     # 美化输出（类似 Jackson SerializationFeature.INDENT_OUTPUT）
     pretty = json.dumps(user, indent=2, ensure_ascii=False)
     print(f"  美化:\n{pretty}")
 
-    # 反序列化: JSON 字符串 -> Python 对象
+    # 反序列化: JSON 字符串 -> Python 对象（loads = load from string）
     parsed = json.loads(pretty)
-    print(f"  loads: type={type(parsed).__name__}, name={parsed['name']}")
-    # 类型映射: dict<->object, list<->array, str<->string,
-    #           int/float<->number, True/False<->true/false, None<->null
-
-    # sort_keys: 按键排序（方便 diff 比对）
+    print(f"  loads(): type={type(parsed).__name__}, name={parsed['name']}")
+    # 类型: dict<->object, list<->array, str<->string,
+    #        int/float<->number, True/False<->true/false, None<->null
     print(f"  sort_keys: {json.dumps(user, sort_keys=True, ensure_ascii=False)[:55]}...")
 
 
@@ -151,8 +149,7 @@ def special_types_demo():
                        object_hook=datetime_hook)
     print(f"  object_hook: start={event['start']} ({type(event['start']).__name__})")
 
-    # --- Decimal: parse_float 避免精度丢失 ---
-    print(f"  float 精度: 0.1+0.2 = {0.1 + 0.2}")
+    # --- Decimal: parse_float 避免精度丢失（0.1+0.2 != 0.3）---
     price_json = '{"price": 19.99}'
     as_float = json.loads(price_json)["price"]
     as_decimal = json.loads(price_json, parse_float=Decimal)["price"]
@@ -214,10 +211,8 @@ class Address:
     street: str
     zipcode: str = ""
 
-
 @dataclass
-class User:
-    """Java 对比: @Data public class User { ... }  // Lombok"""
+class User:  # Java 对比: @Data public class User { ... }  (Lombok)
     name: str
     age: int
     email: str
@@ -231,18 +226,16 @@ def dataclass_json_demo():
     print("=" * 60)
 
     # --- dataclass -> JSON: asdict() + json.dumps() ---
-    user = User("李四", 28, "lisi@example.com",
-                Address("上海", "南京路100号", "200000"), ["编程", "阅读"])
-    print(f"  dataclass -> JSON:")
-    print(json.dumps(asdict(user), indent=2, ensure_ascii=False))
+    user = User("李四", 28, "li@example.com",
+                Address("上海", "南京路100号", "200000"), ["编程"])
+    print(f"  -> JSON:\n{json.dumps(asdict(user), indent=2, ensure_ascii=False)}")
 
-    # --- JSON -> dataclass: 需要手动处理嵌套 ---
+    # --- JSON -> dataclass: 需手动处理嵌套 ---
     json_str = ('{"name": "王五", "age": 35, "email": "ww@example.com", '
                 '"address": {"city": "深圳", "street": "科技路1号"}, "hobbies": ["游泳"]}')
     raw = json.loads(json_str)
-    addr = Address(**raw.pop("address"))
-    restored = User(address=addr, **raw)
-    print(f"  JSON -> dataclass: {restored}")
+    restored = User(address=Address(**raw.pop("address")), **raw)
+    print(f"  -> dataclass: {restored}")
 
     # --- 通用递归转换辅助函数 ---
     def from_dict(cls, data: dict):
@@ -304,10 +297,6 @@ def pitfalls_and_best_practices_demo():
     ]:
         print(f"  {p}")
 
-
-# =============================================================================
-# 运行所有 demo
-# =============================================================================
 
 if __name__ == "__main__":
     json_basics_demo()

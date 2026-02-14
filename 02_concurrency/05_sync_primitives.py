@@ -271,14 +271,12 @@ def deadlock_demo():
 
     # --- 方法 1：固定加锁顺序 ---
     print("\n  --- 方法 1：固定加锁顺序 ---")
-    la, lb = threading.Lock(), threading.Lock()
-    shared = {"count": 0}
+    la, lb, shared = threading.Lock(), threading.Lock(), {"count": 0}
 
     def safe_work(_n):
         for _ in range(100):
             with la:
-                with lb:
-                    shared["count"] += 1
+                with lb: shared["count"] += 1
 
     _run_threads(*[threading.Thread(target=safe_work, args=(i,))
                     for i in range(3)])
@@ -286,9 +284,8 @@ def deadlock_demo():
 
     # --- 方法 2：使用 timeout ---
     print("\n  --- 方法 2：使用 timeout ---")
-    lx, ly = threading.Lock(), threading.Lock()
-    stats, sl = {"ok": 0, "fail": 0}, threading.Lock()
-
+    lx, ly, sl = threading.Lock(), threading.Lock(), threading.Lock()
+    stats = {"ok": 0, "fail": 0}
     def try_locks(first, second):
         for _ in range(50):
             if not first.acquire(timeout=0.01):
@@ -303,9 +300,8 @@ def deadlock_demo():
                  threading.Thread(target=try_locks, args=(ly, lx)))
     print(f"  成功: {stats['ok']}, 超时: {stats['fail']}")
 
-    # --- 方法 3：高级抽象 ---
-    print("\n  --- 方法 3：使用高级抽象（推荐）---")
-    print("  用 queue.Queue 代替手动加锁")
+    # --- 方法 3：高级抽象（推荐）---
+    print("\n  --- 方法 3：用 queue.Queue 等高级抽象代替手动加锁 ---")
     print("  Java 类比：优先用 BlockingQueue, ConcurrentHashMap")
 
 

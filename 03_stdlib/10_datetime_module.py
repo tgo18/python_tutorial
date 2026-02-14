@@ -334,8 +334,7 @@ def practical_scenarios():
             print(f"    -> {tz_name}: {c.strftime('%Y-%m-%d %H:%M %Z')}")
 
     convert_meeting("2025-06-15T15:00:00", "Asia/Shanghai",
-                     ["America/New_York", "Europe/London",
-                      "Asia/Tokyo", "Australia/Sydney"])
+                     ["America/New_York", "Europe/London", "Asia/Tokyo"])
 
     # --- 场景三：计算工作日 ---
     print("\n--- 场景三：计算工作日 ---")

@@ -43,9 +43,8 @@ def builtin_number_types():
     c = 3 + 4j                              # j 是虚数单位（数学中的 i）
     print(f"\n复数: {c}, 实部: {c.real}, 虚部: {c.imag}, 模: {abs(c)}")
 
-    # --- bool 是 int 的子类（Java 中 boolean 和 int 完全独立） ---
-    print(f"\nTrue + True = {True + True}")   # 2（Java 中编译错误）
-    print(f"isinstance(True, int): {isinstance(True, int)}")
+    # bool 是 int 的子类（Java 中 boolean 和 int 完全独立）
+    print(f"\nTrue+True={True + True}, isinstance(True, int)={isinstance(True, int)}")
 
 
 # =============================================================================
@@ -61,8 +60,7 @@ def arithmetic_operators():
 
     print("基本: 10+3={}, 10-3={}, 10*3={}".format(10+3, 10-3, 10*3))
 
-    # 除法: Python vs Java 最大的坑
-    # Java: 10 / 3 = 3（截断小数）  Python: 10 / 3 = 3.333...（真除法）
+    # 除法: Java 10/3=3（截断）  Python 10/3=3.333...（真除法）
     print(f"\n除法（注意与 Java 的区别）:")
     print(f"  10 / 3  = {10 / 3}")          # 3.333... 真除法，永远返回 float
     print(f"  10 // 3 = {10 // 3}")         # 3  整除（等价于 Java 的 10/3）
@@ -146,11 +144,9 @@ def decimal_module_demo():
     print(f"  float:   0.1 + 0.2 = {0.1 + 0.2}")
     print(f"  Decimal: 0.1 + 0.2 = {Decimal('0.1') + Decimal('0.2')}")
 
-    # 千万不要用 float 创建 Decimal！
-    bad = Decimal(0.1)       # 精度已丢失
-    good = Decimal('0.1')    # 精确
-    print(f"\n  Decimal(0.1)   = {bad}")       # 0.10000000000000000555...
-    print(f"  Decimal('0.1') = {good}")         # 0.1
+    # 千万不要用 float 创建 Decimal！精度已丢失
+    print(f"\n  Decimal(0.1)   = {Decimal(0.1)}")     # 0.10000000000000000555...
+    print(f"  Decimal('0.1') = {Decimal('0.1')}")      # 0.1（精确）
 
     # 商品计算示例
     price, tax_rate = Decimal('19.99'), Decimal('0.08')
@@ -162,12 +158,11 @@ def decimal_module_demo():
     rounded = tax.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
     print(f"  税额四舍五入到分: {rounded}")
 
-    # 全局/局部精度
-    print(f"\n精度控制 (当前={decimal.getcontext().prec}位):")
-    print(f"  1/3 = {Decimal(1) / Decimal(3)}")
+    # 全局/局部精度（Java: MathContext.DECIMAL128）
+    print(f"\n精度控制 (默认={decimal.getcontext().prec}位): 1/3 = {Decimal(1)/Decimal(3)}")
     with decimal.localcontext() as ctx:
         ctx.prec = 50
-        print(f"  50位: 1/3 = {Decimal(1) / Decimal(3)}")
+        print(f"  50位精度: 1/3 = {Decimal(1) / Decimal(3)}")
 
     # 舍入模式（Java 对应 RoundingMode）
     val = Decimal('2.5')
@@ -223,7 +218,6 @@ def base_conversion_demo():
     print(f"  int('11111111', 2)={int('11111111', 2)}, int('377', 8)={int('377', 8)}")
     print(f"  int('ff', 16)={int('ff', 16)}, int('0xff', 16)={int('0xff', 16)}")
 
-    # 字面量
     print(f"\n字面量: 0b11111111={0b11111111}, 0o377={0o377}, 0xFF={0xFF}")
 
     # 位运算（和 Java 语法一致）
@@ -292,8 +286,7 @@ def random_module_demo():
     print(f"掷骰子: {random.randint(1, 6)}")
 
     # random/uniform: 浮点数（Java: random.nextDouble()）
-    print(f"随机浮点: {random.random():.4f}")
-    print(f"uniform(1, 10): {random.uniform(1, 10):.4f}")
+    print(f"随机浮点: {random.random():.4f}, uniform(1,10): {random.uniform(1, 10):.4f}")
 
     # choice: 随机选元素（Java 需手动 list.get(random.nextInt(...))）
     colors = ['红', '橙', '黄', '绿', '蓝']

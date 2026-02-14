@@ -107,7 +107,6 @@ def optional_union_demo():
 
 def callable_type_demo():
     """Callable 类型（对比 Java Function/Consumer/Supplier 接口）"""
-
     print("\n" + "=" * 60)
     print("Callable 类型")
     print("=" * 60)
@@ -135,7 +134,6 @@ N = TypeVar("N", int, float)  # 有界：限制为 int 或 float
 
 def typevar_generic_demo():
     """TypeVar 和泛型（对比 Java <T>）"""
-
     print("\n" + "=" * 60)
     print("TypeVar 和泛型")
     print("=" * 60)
@@ -168,7 +166,6 @@ def typevar_generic_demo():
 
 def protocol_demo():
     """Protocol 结构化子类型（对比 Java interface）"""
-
     print("\n" + "=" * 60)
     print("Protocol（结构化子类型）")
     print("=" * 60)
@@ -202,7 +199,6 @@ def protocol_demo():
 
 def typed_dict_demo():
     """TypedDict（对比 Java Map<String, Object> with specific keys）"""
-
     print("\n" + "=" * 60)
     print("TypedDict")
     print("=" * 60)
@@ -235,7 +231,6 @@ def typed_dict_demo():
 
 def literal_type_demo():
     """Literal 类型（限制参数为特定字面值）"""
-
     print("\n" + "=" * 60)
     print("Literal 类型")
     print("=" * 60)
@@ -261,7 +256,6 @@ def literal_type_demo():
 
 def dataclass_demo():
     """dataclass 与类型提示（对比 Java Record / Lombok @Data）"""
-
     print("\n" + "=" * 60)
     print("dataclass 与类型提示")
     print("=" * 60)
@@ -304,7 +298,6 @@ def dataclass_demo():
 
 def mypy_tips_demo():
     """mypy 静态类型检查器简介"""
-
     print("\n" + "=" * 60)
     print("mypy 简介和使用提示")
     print("=" * 60)

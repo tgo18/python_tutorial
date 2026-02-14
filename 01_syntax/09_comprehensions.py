@@ -33,7 +33,6 @@ def list_comprehension_demo():
     print(f"  转整数: {[int(s) for s in ['10', '20', '30']]}")
     print(f"  长度: {[len(name) for name in names]}")
 
-
 # ============================================================
 # 2. 带条件的推导式 —— 对比 Java Stream.filter()
 # ============================================================
@@ -59,7 +58,6 @@ def filtered_comprehension_demo():
     words = ["hello", "", "world", "", "python"]
     print(f"  非空大写: {[w.upper() for w in words if w]}")
 
-
 # ============================================================
 # 3. 嵌套推导式 —— 对比 Java flatMap
 # ============================================================
@@ -84,7 +82,6 @@ def nested_comprehension_demo():
     for row in identity:
         print(f"    {row}")
     # 提示: 超过两层嵌套时，用普通 for 循环更可读
-
 
 # ============================================================
 # 4. 字典推导式 —— 对比 Java Collectors.toMap()
@@ -119,7 +116,6 @@ def dict_comprehension_demo():
     }
     print(f"  等级: {grades}")
 
-
 # ============================================================
 # 5. 集合推导式
 # ============================================================
@@ -142,7 +138,6 @@ def set_comprehension_demo():
     a, b = [1, 2, 3, 4, 5], [3, 4, 5, 6, 7]
     common_squares = {x * x for x in a if x in set(b)}
     print(f"  共同元素平方: {common_squares}")
-
 
 # ============================================================
 # 6. 生成器表达式 —— 惰性求值，内存友好
@@ -173,7 +168,6 @@ def generator_expression_demo():
     print(f"\n  列表 (10000元素) 内存: {list_size:,} bytes")
     print(f"  生成器 (10000元素) 内存: {gen_size:,} bytes")
 
-
 # ============================================================
 # 7. 推导式 vs map/filter —— 何时用哪个
 # ============================================================
@@ -197,7 +191,6 @@ def comprehension_vs_map_filter_demo():
     # --- 选择建议 ---
     print(f"\n  何时用推导式: map+filter 组合时 / 表达式简单时")
     print(f"  何时用 map:   已有现成函数 map(int, strings)")
-
 
 # ============================================================
 # 8. 实际应用场景（数据转换、过滤、分组）
@@ -239,7 +232,6 @@ def practical_examples_demo():
     print(f"  原矩阵: {matrix}")
     print(f"  转置后: {transposed}")
 
-
 # ============================================================
 # 9. 性能对比和最佳实践（何时不该用推导式）
 # ============================================================
@@ -270,7 +262,6 @@ def performance_and_best_practices_demo():
     print(f"  生成器表达式: {t2:.4f}s")
     print(f"  for 循环:     {t3:.4f}s")
     assert r1 == r2 == r3
-
     # --- 最佳实践 ---
     print(f"\n--- 最佳实践 ---")
     print("  [规则1] 保持简单，超过一行就拆开")
@@ -280,7 +271,6 @@ def performance_and_best_practices_demo():
     print("  [规则3] 大数据用生成器表达式，避免内存爆炸")
     # 不好: sum([x for x in range(10_000_000)])
     # 好:   sum(x for x in range(10_000_000))
-
     print("  [规则4] 选择合适的推导式类型")
     data = [1, 2, 2, 3, 3, 3]
     as_list = [x * 2 for x in data]
@@ -289,7 +279,6 @@ def performance_and_best_practices_demo():
     print(f"    需要列表 -> []: {as_list}")
     print(f"    需要去重 -> {{}}: {as_set}")
     print(f"    需要映射 -> {{k:v}}: {as_dict}")
-
     # walrus 运算符 (:=) 避免重复计算 (Python 3.8+)
     print("\n  [规则5] 用 := 避免重复计算")
     data = ["hello world", "hi", "good morning everyone", "ok"]

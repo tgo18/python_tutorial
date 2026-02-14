@@ -9,7 +9,6 @@ Python3 异常处理 —— 写给 Java 开发者
 
 import warnings
 
-
 # ============================================================
 # 1. try-except 基础 —— 对比 Java try-catch
 # ============================================================
@@ -36,7 +35,6 @@ def basic_try_except_demo():
         int("not_a_number")
     except Exception as e:
         print(f"  通用捕获: {type(e).__name__}: {e}")
-
 
 # ============================================================
 # 2. 多异常捕获 —— 对比 Java multi-catch
@@ -72,7 +70,6 @@ def multi_exception_demo():
     parse_and_access("10", 99)
     print(f"  正常调用: {parse_and_access('5', 1)}")
 
-
 # ============================================================
 # 3. else 和 finally —— 对比 Java try-catch-finally
 # ============================================================
@@ -99,7 +96,6 @@ def else_finally_demo():
     print("--- 异常 ---")
     divide(10, 0)
 
-
 # ============================================================
 # 4. 异常层次结构 —— 对比 Java Exception hierarchy
 # ============================================================
@@ -109,7 +105,6 @@ def exception_hierarchy_demo():
     print("\n" + "=" * 60)
     print("4. 异常层次结构（对比 Java Exception hierarchy）")
     print("=" * 60)
-
     # Java: Throwable -> Error / Exception -> RuntimeException
     print("""  BaseException                 # ~ Throwable
   +-- SystemExit                # ~ System.exit()，别捕获
@@ -123,7 +118,6 @@ def exception_hierarchy_demo():
       +-- OSError               # ~ IOException""")
     print("\n  关键: Python 没有 checked exception，全是 unchecked")
     print("  except Exception 不捕获 KeyboardInterrupt/SystemExit")
-
 
 # ============================================================
 # 5. 自定义异常 —— 对比 Java custom exceptions
@@ -167,7 +161,6 @@ def custom_exception_demo():
         except BusinessError as e:
             print(f"  业务异常: {e.code} - {e.message}")
 
-
 # ============================================================
 # 6. 异常链 (raise ... from ...) —— 对比 Java initCause
 # ============================================================
@@ -189,17 +182,16 @@ def exception_chaining_demo():
         get_user(42)
     except BusinessError as e:
         print(f"  业务异常: {e}")
-        print(f"  原始原因: {e.__cause__}")
-        print(f"  原因类型: {type(e.__cause__).__name__}")
+        print(f"  原始原因(__cause__): {e.__cause__}")
 
-    # 隐式链 __context__ vs 显式链 __cause__（from）
+    # 隐式链: except 中 raise 新异常自动设置 __context__
     try:
         try:
             1 / 0
         except ZeroDivisionError:
             raise ValueError("转换失败")
     except ValueError as e:
-        print(f"  隐式 __context__: {e.__context__}")
+        print(f"  隐式链(__context__): {e.__context__}")
 
     # from None 切断异常链
     try:
@@ -208,8 +200,7 @@ def exception_chaining_demo():
         except ValueError:
             raise BusinessError("PARSE_ERR", "无效输入") from None
     except BusinessError as e:
-        print(f"  from None 切断链: __cause__={e.__cause__}")
-
+        print(f"  from None 切断链: {e.__cause__}")
 
 # ============================================================
 # 7. 上下文管理器与异常 (with 语句简介)
@@ -224,17 +215,14 @@ def context_manager_demo():
     # Java 7+: try (Resource r = ...) { ... }  （AutoCloseable）
     class DBConn:
         def __init__(self, name): self.name = name
-
         def __enter__(self):
             print(f"  [enter] 连接: {self.name}")
             return self
-
         def __exit__(self, exc_type, exc_val, exc_tb):
             if exc_type:
                 print(f"  [exit]  异常: {exc_type.__name__}: {exc_val}")
             print(f"  [exit]  关闭: {self.name}")
             return False  # False=不吞异常, True=吞掉
-
         def query(self, sql):
             if "DROP" in sql: raise PermissionError("禁止 DROP!")
             return f"结果: [{sql}]"
@@ -250,7 +238,6 @@ def context_manager_demo():
     except PermissionError as e:
         print(f"  外部捕获: {e}")
 
-
 # ============================================================
 # 8. EAFP vs LBYL —— Python "先做再说" vs Java "先检查再做"
 # ============================================================
@@ -260,7 +247,6 @@ def eafp_vs_lbyl_demo():
     print("\n" + "=" * 60)
     print("8. EAFP vs LBYL 编程风格")
     print("=" * 60)
-
     user = {"name": "张三", "age": 28}
 
     # LBYL (Look Before You Leap) —— Java: if (map.containsKey(...))
@@ -277,7 +263,7 @@ def eafp_vs_lbyl_demo():
     print(f"  电话: {phone}")
     print(f"  最地道: {user.get('phone', '未设置')}")  # dict.get()
 
-    # EAFP 避免 TOCTOU 竞态: 直接尝试，失败再处理
+    # EAFP 避免 TOCTOU 竞态
     try:
         with open("/tmp/_nonexistent_demo.txt") as f:
             f.read()
@@ -287,13 +273,11 @@ def eafp_vs_lbyl_demo():
     # 鸭子类型 + EAFP
     class Duck:
         def quack(self): return "嘎嘎!"
-
     for obj in [Duck(), "not_a_duck"]:
         try:
             print(f"  鸭子测试 {type(obj).__name__}: {obj.quack()}")
         except AttributeError:
             print(f"  鸭子测试 {type(obj).__name__}: 不会叫")
-
 
 # ============================================================
 # 9. warnings 模块简介
@@ -325,7 +309,6 @@ def warnings_demo():
                         ("UserWarning", "通用用户警告"),
                         ("RuntimeWarning", "运行时可疑行为")]:
         print(f"    {name:<24s} {desc}")
-
 
 # ============================================================
 # 运行所有 demo

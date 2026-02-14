@@ -93,18 +93,18 @@ async def gather_demo():
         return f"{name}: OK"
 
     # 串行 vs 并发对比
-    start = time.perf_counter()
+    t0 = time.perf_counter()
     await call_api("用户服务", 0.3)
     await call_api("订单服务", 0.3)
-    serial_time = time.perf_counter() - start
-    print(f"  串行耗时: {serial_time:.2f}s")
+    serial = time.perf_counter() - t0
+    print(f"  串行耗时: {serial:.2f}s")
 
-    start = time.perf_counter()
+    t0 = time.perf_counter()
     results = await asyncio.gather(
         call_api("用户服务", 0.3), call_api("订单服务", 0.3),
     )
-    gather_time = time.perf_counter() - start
-    print(f"  并发耗时: {gather_time:.2f}s (快了约 {serial_time / gather_time:.1f} 倍)")
+    concurrent = time.perf_counter() - t0
+    print(f"  并发耗时: {concurrent:.2f}s (快了约 {serial / concurrent:.1f} 倍)")
 
     # return_exceptions=True: 不会因单个失败而中断
     async def may_fail(name):
@@ -134,10 +134,10 @@ async def create_task_demo():
     # 类比 Java: executor.submit(callable) 返回 Future
     # Task 可以 await、取消、查询状态
 
-    async def background_job(name, delay_sec):
-        print(f"  [{name}] 后台任务启动")
-        await asyncio.sleep(delay_sec)
-        print(f"  [{name}] 后台任务完成")
+    async def background_job(name, sec):
+        print(f"  [{name}] 启动")
+        await asyncio.sleep(sec)
+        print(f"  [{name}] 完成")
         return f"{name} 结果"
 
     task1 = asyncio.create_task(background_job("任务A", 0.3))
@@ -342,32 +342,30 @@ async def real_world_scenario():
 
     # 微服务聚合（API Gateway 模式）
     print("  --- 微服务聚合 ---")
-    start = time.perf_counter()
+    t0 = time.perf_counter()
     results = await asyncio.gather(
         call_microservice("用户中心", 0.2),
         call_microservice("订单系统", 0.3),
         call_microservice("支付网关", 0.15),
     )
-    elapsed = time.perf_counter() - start
     for r in results:
         print(f"  {r['service']}: {r['status']} ({r['ms']}ms)")
-    print(f"  总耗时: {elapsed:.2f}s (并发，约等于最慢的 0.3s)")
+    print(f"  总耗时: {time.perf_counter() - t0:.2f}s (并发，约等于最慢的 0.3s)")
 
     # 限流爬虫（Semaphore 控制并发度）
     print("\n  --- 限流爬虫（Semaphore）---")
-    semaphore = asyncio.Semaphore(3)  # 最多 3 个并发
+    sem = asyncio.Semaphore(3)  # 最多 3 个并发
 
-    async def crawl_url(url):
-        async with semaphore:
+    async def crawl(url):
+        async with sem:
             print(f"  爬取: {url}")
             await asyncio.sleep(random.uniform(0.1, 0.2))
             return f"{url} -> 200"
 
     urls = [f"https://example.com/page/{i}" for i in range(6)]
-    start = time.perf_counter()
-    results = await asyncio.gather(*[crawl_url(u) for u in urls])
-    elapsed = time.perf_counter() - start
-    print(f"  完成 {len(results)} 个请求, 耗时: {elapsed:.2f}s (并发度=3)")
+    t0 = time.perf_counter()
+    results = await asyncio.gather(*[crawl(u) for u in urls])
+    print(f"  完成 {len(results)} 个请求, 耗时: {time.perf_counter() - t0:.2f}s (并发度=3)")
 
 
 # =============================================================================

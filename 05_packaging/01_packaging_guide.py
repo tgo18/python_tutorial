@@ -7,6 +7,8 @@ Python3 打包构建指南 —— 写给 Java 开发者
 - pyproject.toml 是现代 Python 项目的标准配置文件（类似 pom.xml）
 """
 
+from unittest.mock import Mock
+
 
 # =============================================================================
 # 1. venv 虚拟环境
@@ -24,36 +26,20 @@ def venv_demo():
 
     print("""
     # --- 为什么需要虚拟环境？---
-    # 场景：项目A 需要 requests==2.28，项目B 需要 requests==2.31
+    # 项目A 需要 requests==2.28，项目B 需要 requests==2.31
     # 没有 venv → 全局只能装一个版本，冲突！
     # Java 不需要：每个项目的 classpath 天然隔离
 
-    # --- 创建虚拟环境 ---
-    $ python -m venv .venv          # 在项目根目录创建 .venv 文件夹
-    #                                 类似在项目里建了一个独立的 Python 环境
-
-    # --- 激活虚拟环境 ---
-    $ source .venv/bin/activate     # Linux/macOS
-    $ .venv\\Scripts\\activate        # Windows
-    # 激活后命令行前面会出现 (.venv) 提示符
-
-    # --- 验证 ---
-    $ which python                  # 应该指向 .venv/bin/python
-    $ python --version              # 确认 Python 版本
-
-    # --- 退出虚拟环境 ---
-    $ deactivate                    # 回到系统全局 Python
-
-    # --- 目录结构 ---
-    # .venv/
-    #   bin/              # 可执行文件 (python, pip, activate)
-    #   lib/              # 安装的包 (site-packages)
-    #   pyvenv.cfg        # 配置文件
+    # --- 创建 & 使用 ---
+    $ python -m venv .venv          # 创建 .venv 文件夹
+    $ source .venv/bin/activate     # Linux/macOS 激活
+    $ .venv\\Scripts\\activate        # Windows 激活
+    $ which python                  # 应指向 .venv/bin/python
+    $ deactivate                    # 退出虚拟环境
 
     # --- 最佳实践 ---
-    # 1. 将 .venv 加入 .gitignore（类似 Java 的 target/ 或 build/）
+    # 1. 将 .venv 加入 .gitignore（类似 Java 的 target/）
     # 2. 每个项目一个独立的 venv
-    # 3. 使用 requirements.txt 记录依赖（后面会讲）
     """)
 
 
@@ -68,44 +54,24 @@ def pip_demo():
     print("2. pip 包管理")
     print("=" * 60)
 
-    # pip 是 Python 的官方包管理器
-    # 类比: pip install ≈ mvn dependency:resolve / gradle dependencies
-
     print("""
-    # --- 安装包 ---
-    $ pip install requests              # 安装最新版（≈ Maven 不指定版本）
-    $ pip install requests==2.31.0      # 安装指定版本（≈ <version>2.31.0</version>）
+    # --- 安装 / 卸载 ---
+    $ pip install requests              # 安装最新版
+    $ pip install requests==2.31.0      # 指定版本（≈ <version>2.31.0</version>）
     $ pip install "requests>=2.28,<3"   # 版本范围（≈ Maven version range）
-    $ pip install requests[security]    # 安装可选依赖（≈ Maven optional dependency）
+    $ pip uninstall requests            # 卸载
 
-    # --- 卸载包 ---
-    $ pip uninstall requests            # 移除包
-
-    # --- 查看已安装 ---
-    $ pip list                          # 列出所有包（≈ mvn dependency:tree 简化版）
-    $ pip show requests                 # 查看包详情（版本、依赖、位置）
-
-    # --- requirements.txt（类似 pom.xml 的 <dependencies>）---
-    $ pip freeze > requirements.txt     # 导出当前环境的所有包和精确版本
+    # --- 查看 & 导出 ---
+    $ pip list                          # 列出所有包
+    $ pip show requests                 # 查看包详情
+    $ pip freeze > requirements.txt     # 导出精确版本（≈ pom.xml dependencies）
     $ pip install -r requirements.txt   # 从文件安装（≈ mvn install）
-    """)
 
-    # 展示 requirements.txt 格式
-    print("    # --- requirements.txt 文件格式 ---")
-    requirements_example = """    requests==2.31.0
-    flask==3.0.0
-    sqlalchemy>=2.0,<3.0
-    pytest>=7.0           # 开发依赖也混在一起（这是 pip 的缺点）
-    # Java 的 Maven 有 <scope>test</scope>，pip 没有原生支持"""
-    print(requirements_example)
-
-    print("""
-    # --- pip 的局限性（Java 开发者会觉得不方便的地方）---
-    # 1. 没有 lock 文件 → 不同环境可能装到不同版本（Maven 有确定性构建）
+    # --- pip 的局限性 ---
+    # 1. 没有 lock 文件 → 不同环境可能装到不同版本
     # 2. 没有 dev/test 依赖分组 → 生产和开发依赖混在一起
-    # 3. 不能自动解决依赖冲突 → 可能出现版本不兼容
-    # 4. 没有项目初始化命令 → 不像 mvn archetype:generate
-    # → 这些问题催生了 Poetry 和 uv！
+    # 3. 不能自动解决依赖冲突
+    # → 这些痛点催生了 Poetry 和 uv！
     """)
 
 
@@ -124,46 +90,28 @@ def pyproject_demo():
     # 类比: pyproject.toml ≈ pom.xml + build.gradle 的合体
 
     print("""
-    # --- pyproject.toml 完整示例 ---
-
     [project]                               # ≈ Maven <project> 基本信息
     name = "my-awesome-app"                 # ≈ <artifactId>
     version = "1.0.0"                       # ≈ <version>
-    description = "A demo project"          # ≈ <description>
-    readme = "README.md"
+    description = "A demo project"
     requires-python = ">=3.10"              # ≈ <maven.compiler.source>
-    license = {text = "MIT"}                # ≈ <license>
-    authors = [
-        {name = "张三", email = "z@example.com"},  # ≈ <developers>
-    ]
-    dependencies = [                        # ≈ <dependencies>（运行时依赖）
-        "requests>=2.28",
-        "sqlalchemy>=2.0",
-    ]
+    dependencies = ["requests>=2.28", "sqlalchemy>=2.0"]  # ≈ <dependencies>
 
-    [project.optional-dependencies]         # ≈ Maven profiles / Gradle configurations
-    dev = [                                 # 开发依赖（≈ <scope>test</scope>）
-        "pytest>=7.0",
-        "black>=23.0",
-        "mypy>=1.0",
-    ]
+    [project.optional-dependencies]         # ≈ Maven profiles
+    dev = ["pytest>=7.0", "black>=23.0", "mypy>=1.0"]
 
-    [project.scripts]                       # ≈ Maven exec plugin / Gradle application plugin
-    my-cli = "my_app.cli:main"             # 注册命令行工具入口点
+    [project.scripts]                       # ≈ Gradle application plugin
+    my-cli = "my_app.cli:main"             # 命令行入口点
 
-    [build-system]                          # ≈ Maven 的 <build><plugins> 或 Gradle plugins{}
-    requires = ["setuptools>=68.0"]         # 构建工具（还有 hatchling, flit 等）
-    build-backend = "setuptools.build_meta" # 构建后端
+    [build-system]                          # ≈ Maven <build><plugins>
+    requires = ["setuptools>=68.0"]
+    build-backend = "setuptools.build_meta"
 
-    [tool.pytest.ini_options]               # ≈ Maven surefire plugin 配置
+    [tool.pytest.ini_options]               # ≈ surefire plugin
     testpaths = ["tests"]
-    addopts = "-v --tb=short"
 
-    [tool.black]                            # 代码格式化配置（≈ checkstyle）
+    [tool.black]                            # 代码格式化（≈ checkstyle）
     line-length = 88
-
-    [tool.mypy]                             # 类型检查配置（≈ Java 编译器类型检查）
-    strict = true
     """)
 
     print("    # --- 对比总结 ---")
@@ -189,44 +137,23 @@ def poetry_demo():
     # 类比: Poetry ≈ Gradle（依赖管理 + 构建 + 发布一体化）
 
     print("""
-    # --- 安装 Poetry ---
-    $ curl -sSL https://install.python-poetry.org | python3 -
-    # 或: pipx install poetry
+    $ curl -sSL https://install.python-poetry.org | python3 -  # 安装
 
-    # --- 初始化项目（≈ gradle init）---
-    $ poetry init                       # 交互式创建 pyproject.toml
+    $ poetry init                       # 交互式创建 pyproject.toml（≈ gradle init）
     $ poetry new my-project             # 创建完整项目结构（含 tests/）
-
-    # --- 依赖管理 ---
-    $ poetry add requests               # 添加依赖（≈ gradle 在 build.gradle 加依赖）
-    $ poetry add pytest --group dev     # 添加开发依赖（≈ testImplementation）
-    $ poetry remove requests            # 移除依赖
-
-    # --- 安装与锁定 ---
+    $ poetry add requests               # 添加依赖（≈ build.gradle 加依赖）
+    $ poetry add pytest --group dev     # 开发依赖（≈ testImplementation）
     $ poetry install                    # 安装所有依赖（≈ gradle build）
-    $ poetry lock                       # 生成/更新 poetry.lock
-    #                                     lock 文件确保团队环境一致（≈ gradle.lockfile）
-
-    # --- 构建与发布 ---
-    $ poetry build                      # 打包成 wheel/sdist（≈ gradle jar）
-    $ poetry publish                    # 发布到 PyPI（≈ gradle publish 到 Maven Central）
-
-    # --- 运行 ---
+    $ poetry lock                       # 生成 poetry.lock（确保团队一致）
+    $ poetry build                      # 打包（≈ gradle jar）
+    $ poetry publish                    # 发布到 PyPI
     $ poetry run python main.py         # 在虚拟环境中运行
     $ poetry run pytest                 # 运行测试
-    $ poetry shell                      # 进入虚拟环境 shell
-
-    # --- Poetry 的优点 ---
-    # 1. 自动管理虚拟环境
-    # 2. poetry.lock 保证确定性构建
-    # 3. 依赖分组 (main/dev/test)
-    # 4. 一体化工具（init → develop → build → publish）
 
     # --- Poetry 的缺点（促使 uv 诞生）---
-    # 1. 依赖解析速度慢（大项目可能要等几分钟）
-    # 2. 安装本身就比较复杂
-    # 3. 与 pip 生态不完全兼容
-    # → 于是 uv 来了！
+    # 1. 依赖解析速度慢（大项目可能等几分钟）
+    # 2. 安装本身比较复杂
+    # 3. 与 pip 生态不完全兼容 → 于是 uv 来了！
     """)
 
 
@@ -243,25 +170,22 @@ def uv_overview_demo():
 
     print("""
     # ===== uv 是什么？=====
-    # uv 是由 Astral（也是 ruff 代码检查工具的作者）用 Rust 开发的
-    # Python 包管理工具。它是 pip + venv + Poetry + pipx 的全能替代品。
+    # Astral（ruff 的作者）用 Rust 开发的 Python 包管理工具
+    # 它是 pip + venv + Poetry + pipx 的全能替代品
     #
-    # 类比 Java: 想象一个用 C++ 重写的 Gradle，速度快 10-100 倍，
-    #            而且完全兼容 Maven 仓库和 Gradle 的配置格式。
+    # 类比: 想象一个用 C++ 重写的 Gradle，快 10-100 倍，完全兼容现有生态
     #
     # 核心优势：
-    # 1. 极快速度：Rust 实现，比 pip 快 10-100x（不是夸张）
+    # 1. 极快：Rust 实现，比 pip 快 10-100x
     # 2. 全能：一个工具替代 pip + venv + poetry + pipx
-    # 3. 兼容性：完全兼容 pip 和 pyproject.toml
+    # 3. 兼容：完全兼容 pip 和 pyproject.toml
     # 4. 确定性：自动生成 uv.lock 锁文件
-    # 5. 零配置：开箱即用，不需要复杂安装
+    # 5. 零配置：开箱即用
 
-    # ===== 安装 uv =====
+    # ===== 安装 =====
     $ curl -LsSf https://astral.sh/uv/install.sh | sh    # Linux/macOS
-    # 或
-    $ pip install uv          # 用 pip 安装（但推荐独立安装）
-    # 或
-    $ brew install uv         # macOS Homebrew
+    $ pip install uv                                       # 或用 pip
+    $ brew install uv                                      # 或 Homebrew
     """)
 
 
@@ -277,11 +201,9 @@ def uv_venv_and_pip_demo():
     $ uv venv                      # 创建 .venv（比 python -m venv 快 10 倍）
     $ uv venv --python 3.12        # 指定 Python 版本（自动下载！）
     $ uv venv myenv                # 自定义目录名
+    # 类比：像 sdkman 一样自动管理多个 Python 版本
 
-    # 注意：uv 可以自动检测和下载 Python 版本！
-    # Java 开发者类比：像 sdkman 一样管理多个 Python 版本
-
-    # --- uv pip（替代 pip，完全兼容的 pip 命令）---
+    # --- uv pip（完全兼容的 pip 替代品）---
     $ uv pip install requests              # 安装包（比 pip 快 10-100x）
     $ uv pip install -r requirements.txt   # 从 requirements.txt 安装
     $ uv pip uninstall requests            # 卸载
@@ -308,11 +230,7 @@ def uv_project_demo():
     # --- 初始化项目（≈ poetry new / gradle init）---
     $ uv init my-project               # 创建新项目
     $ cd my-project
-    # 自动生成：
-    #   pyproject.toml    ← 项目配置
-    #   .python-version   ← Python 版本
-    #   hello.py          ← 示例代码
-    #   README.md
+    # 自动生成：pyproject.toml, .python-version, hello.py, README.md
 
     # --- 添加依赖（≈ poetry add / gradle dependencies）---
     $ uv add requests                  # 添加运行时依赖
@@ -325,7 +243,7 @@ def uv_project_demo():
     # 2. 解析依赖树（解决冲突）
     # 3. 更新 uv.lock 锁文件
     # 4. 安装到虚拟环境
-    # 一条命令完成 Java 中需要"修改 pom.xml + mvn install"两步的工作
+    # 一条命令完成 Java 中"修改 pom.xml + mvn install"两步的工作
 
     # --- 同步依赖（≈ poetry install / mvn install）---
     $ uv sync                          # 安装 pyproject.toml 中的所有依赖
@@ -336,7 +254,6 @@ def uv_project_demo():
     $ uv run python main.py            # 在项目环境中运行（自动同步依赖）
     $ uv run pytest                    # 运行测试
     $ uv run flask run                 # 运行 Flask 服务
-
     # uv run 的魔力：自动创建 venv + 安装依赖 + 运行命令，一步到位！
     # Java 类比：像 gradle run 一样，不需要先手动构建
     """)
@@ -351,8 +268,8 @@ def uv_lock_demo():
 
     print("""
     # --- uv.lock 是什么？---
-    # uv.lock 类似 package-lock.json (npm) 或 gradle.lockfile
-    # 它记录了所有依赖的精确版本和哈希值，确保：
+    # 类似 package-lock.json (npm) 或 gradle.lockfile
+    # 记录所有依赖的精确版本和哈希值，确保：
     # 1. 团队所有人安装完全相同的版本
     # 2. CI/CD 构建结果可复现
     # 3. 防止"在我机器上能跑"的问题
@@ -360,12 +277,13 @@ def uv_lock_demo():
     # --- 工作流程 ---
     $ uv add requests          # 自动更新 uv.lock
     $ uv lock                  # 手动重新生成锁文件
+    $ uv lock --upgrade        # 升级所有依赖到最新兼容版本
     $ uv sync --frozen         # 严格按锁文件安装（不更新 lock）
 
     # --- 最佳实践 ---
     # 1. uv.lock 必须提交到 Git（和 poetry.lock 一样）
     # 2. CI 中使用 uv sync --frozen 确保一致性
-    # 3. 升级依赖时用 uv lock --upgrade
+    # 3. 定期 uv lock --upgrade 更新依赖
 
     # --- 对比 ---
     # pip freeze > requirements.txt  → 手动、容易忘记更新
@@ -383,7 +301,7 @@ def uv_tool_demo():
 
     print("""
     # --- 什么是 uv tool？---
-    # 用于安装全局 CLI 工具，每个工具有独立的隔离环境
+    # 安装全局 CLI 工具，每个工具有独立的隔离环境
     # 类比：像 npx (npm) 或者全局安装的 CLI 工具
 
     $ uv tool install ruff             # 安装代码检查工具
@@ -410,22 +328,22 @@ def uv_why_recommend_demo():
     print("""
     # ===== 工具对比一览 =====
     #
-    # 功能            pip          Poetry       uv
-    # ──────────────────────────────────────────────────────
-    # 安装包          pip install  poetry add   uv add / uv pip install
-    # 虚拟环境        python -m venv  自动管理  uv venv（可自动下载 Python）
-    # 锁文件          无（手动 freeze） poetry.lock uv.lock
-    # 依赖分组        无           有           有
-    # 构建/发布       twine        poetry build uv build / uv publish
-    # 全局工具        pipx         无           uv tool
-    # 速度            慢           中等         极快（10-100x）
-    # 实现语言        Python       Python       Rust
-    #
+    # 功能         pip            Poetry         uv
+    # ─────────────────────────────────────────────────────
+    # 安装包       pip install    poetry add     uv add / uv pip install
+    # 虚拟环境     python -m venv 自动管理       uv venv（可自动下载 Python）
+    # 锁文件       无(手动freeze) poetry.lock    uv.lock
+    # 依赖分组     无             有             有
+    # 构建/发布    twine          poetry build   uv build / uv publish
+    # 全局工具     pipx           无             uv tool
+    # 速度         慢             中等           极快（10-100x）
+    # 实现语言     Python         Python         Rust
+
     # ===== 推荐策略 =====
     # 新项目 → 直接用 uv（2024年后的最佳选择）
     # 老项目用 pip → 可以无缝切换到 uv pip（完全兼容）
     # 老项目用 Poetry → 可以逐步迁移到 uv（兼容 pyproject.toml）
-    #
+
     # ===== 完整的 uv 工作流 =====
     $ uv init my-project && cd my-project   # 1. 创建项目
     $ uv add flask sqlalchemy               # 2. 添加依赖
@@ -465,25 +383,18 @@ def pytest_demo():
     def add(a, b):
         return a + b
 
-    def test_add():
-        """最简单的测试函数"""
-        # Python: 直接用 assert
-        # Java:   assertEquals(3, add(1, 2))
-        assert add(1, 2) == 3
-        assert add(-1, 1) == 0
-        assert add(0, 0) == 0
-
-    test_add()
+    # Python: 直接用 assert；Java: assertEquals(3, add(1, 2))
+    assert add(1, 2) == 3
+    assert add(-1, 1) == 0
     print("    test_add 通过!")
 
     print("""
     # --- 测试文件结构 ---
     # my_project/
-    #   src/
-    #     calculator.py
+    #   src/calculator.py
     #   tests/
     #     test_calculator.py    # 文件名必须 test_ 开头
-    #     conftest.py           # 共享 fixture（≈ JUnit @BeforeAll 的集中管理）
+    #     conftest.py           # 共享 fixture（≈ JUnit @BeforeAll 集中管理）
     #
     # 运行: $ pytest                    # 自动发现并运行所有 test_*.py
     #       $ pytest tests/test_calc.py  # 运行特定文件
@@ -493,97 +404,74 @@ def pytest_demo():
 
     # --- Fixture ---
     print("--- 6.2 Fixture（≈ JUnit @BeforeEach / @BeforeAll）---")
-
     print("""
     import pytest
 
     @pytest.fixture                    # ≈ JUnit @BeforeEach
     def sample_user():
-        '''每个测试前创建新用户'''
         user = {"name": "张三", "age": 30}
         yield user                     # yield 之前 = setUp, 之后 = tearDown
-        # 这里可以做清理工作（≈ @AfterEach）
-        print("清理用户数据")
+        print("清理用户数据")          # ← 这里做清理（≈ @AfterEach）
 
     @pytest.fixture(scope="module")    # ≈ JUnit @BeforeAll
     def db_connection():
-        '''整个模块共享一个数据库连接'''
         conn = create_connection()
         yield conn
-        conn.close()                   # 模块结束后关闭
+        conn.close()
 
-    def test_user_name(sample_user):   # 参数名 = fixture 函数名，自动注入！
+    def test_user_name(sample_user):   # 参数名 = fixture 名，自动注入！
         assert sample_user["name"] == "张三"
-
-    # Java 需要 @Autowired 或 @BeforeEach 手动创建
-    # Python 的 fixture 通过参数名自动注入，更简洁！
+    # Python fixture 通过参数名自动注入，比 Java @Autowired 更简洁
     """)
 
     # --- 参数化测试 ---
     print("--- 6.3 参数化测试（≈ JUnit @ParameterizedTest）---")
-
-    import pytest  # noqa: F811
-
-    # 模拟参数化测试
-    test_data = [
-        (1, 2, 3),
-        (0, 0, 0),
-        (-1, 1, 0),
-        (100, 200, 300),
-    ]
-
     print("""
     @pytest.mark.parametrize("a, b, expected", [
-        (1, 2, 3),
-        (0, 0, 0),
-        (-1, 1, 0),
-        (100, 200, 300),
+        (1, 2, 3),  (0, 0, 0),  (-1, 1, 0),  (100, 200, 300),
     ])
     def test_add_parametrized(a, b, expected):
         assert add(a, b) == expected
 
     # Java JUnit 5 等价代码：
     # @ParameterizedTest
-    # @CsvSource({"1,2,3", "0,0,0", "-1,1,0", "100,200,300"})
+    # @CsvSource({"1,2,3", "0,0,0", "-1,1,0"})
     # void testAdd(int a, int b, int expected) {
     #     assertEquals(expected, Calculator.add(a, b));
     # }
     """)
 
-    # 实际运行参数化测试
+    # 实际运行参数化测试演示
+    test_data = [(1, 2, 3), (0, 0, 0), (-1, 1, 0), (100, 200, 300)]
     for a, b, expected in test_data:
         assert add(a, b) == expected
         print(f"    test_add({a}, {b}) == {expected} 通过!")
 
     # --- Mock ---
     print("\n--- 6.4 Mock（≈ Java Mockito）---")
-
     print("""
     from unittest.mock import Mock, patch, MagicMock
 
     # --- 基本 Mock ---
-    mock_service = Mock()                          # ≈ Mockito.mock(Service.class)
-    mock_service.get_user.return_value = "张三"     # ≈ when(...).thenReturn(...)
-    assert mock_service.get_user(1) == "张三"
-    mock_service.get_user.assert_called_once_with(1)  # ≈ verify(mock).getUser(1)
+    mock_svc = Mock()                             # ≈ Mockito.mock(Service.class)
+    mock_svc.get_user.return_value = "张三"        # ≈ when(...).thenReturn(...)
+    assert mock_svc.get_user(1) == "张三"
+    mock_svc.get_user.assert_called_once_with(1)  # ≈ verify(mock).getUser(1)
 
-    # --- patch 替换模块中的对象（≈ @MockBean / @InjectMocks）---
+    # --- patch 替换模块中的对象（≈ @MockBean）---
     @patch("my_app.service.requests.get")
     def test_fetch_data(mock_get):
         mock_get.return_value.json.return_value = {"key": "value"}
         result = fetch_data("http://api.example.com")
         assert result == {"key": "value"}
-        mock_get.assert_called_once()
 
-    # --- MagicMock 自动生成属性和方法 ---
+    # --- MagicMock（≈ Mockito deep stubs）---
     mock_db = MagicMock()
     mock_db.query.filter_by.return_value.first.return_value = "结果"
-    # 链式调用随便写，MagicMock 全都接受（类似 Mockito 的 deep stubs）
+    # 链式调用随便写，MagicMock 全都接受
     """)
 
     # 实际演示 Mock
-    from unittest.mock import Mock
-
     mock_api = Mock()
     mock_api.get_data.return_value = {"status": "ok", "count": 42}
     result = mock_api.get_data("users")
