@@ -86,9 +86,7 @@ def pyproject_demo():
     print("3. pyproject.toml 项目配置")
     print("=" * 60)
 
-    # pyproject.toml 是 PEP 621 定义的标准项目配置文件
-    # 类比: pyproject.toml ≈ pom.xml + build.gradle 的合体
-
+    # PEP 621 标准配置文件，≈ pom.xml + build.gradle 的合体
     print("""
     [project]                               # ≈ Maven <project> 基本信息
     name = "my-awesome-app"                 # ≈ <artifactId>
@@ -133,9 +131,7 @@ def poetry_demo():
     print("4. Poetry 现代包管理")
     print("=" * 60)
 
-    # Poetry 解决了 pip 的大部分痛点
-    # 类比: Poetry ≈ Gradle（依赖管理 + 构建 + 发布一体化）
-
+    # Poetry ≈ Gradle（依赖管理 + 构建 + 发布一体化）
     print("""
     $ curl -sSL https://install.python-poetry.org | python3 -  # 安装
 
@@ -366,17 +362,11 @@ def pytest_demo():
     print("    test_add 通过!")
 
     print("""
-    # --- 测试文件结构 ---
-    # my_project/
-    #   src/calculator.py
-    #   tests/
-    #     test_calculator.py    # 文件名必须 test_ 开头
-    #     conftest.py           # 共享 fixture（≈ JUnit @BeforeAll 集中管理）
-    #
-    # 运行: $ pytest                    # 自动发现并运行所有 test_*.py
-    #       $ pytest tests/test_calc.py  # 运行特定文件
-    #       $ pytest -v                  # 详细输出
-    #       $ pytest -k "test_add"       # 按名称过滤
+    # 测试文件: tests/test_*.py（文件名必须 test_ 开头）
+    # 共享配置: tests/conftest.py（共享 fixture）
+    # 运行: $ pytest             # 自动发现所有 test_*.py
+    #       $ pytest -v          # 详细输出
+    #       $ pytest -k "add"    # 按名称过滤
     """)
 
     # --- Fixture ---
@@ -409,12 +399,7 @@ def pytest_demo():
     def test_add_parametrized(a, b, expected):
         assert add(a, b) == expected
 
-    # Java JUnit 5 等价代码：
-    # @ParameterizedTest
-    # @CsvSource({"1,2,3", "0,0,0", "-1,1,0"})
-    # void testAdd(int a, int b, int expected) {
-    #     assertEquals(expected, Calculator.add(a, b));
-    # }
+    # Java: @ParameterizedTest + @CsvSource({"1,2,3", "0,0,0"})
     """)
 
     # 实际运行参数化测试演示

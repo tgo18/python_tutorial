@@ -99,18 +99,16 @@ async def gather_demo():
     concurrent = time.perf_counter() - t0
     print(f"  并发耗时: {concurrent:.2f}s (快约 {serial/concurrent:.1f} 倍)")
 
-    # return_exceptions=True: 单个失败不中断
+    # return_exceptions=True: 单个失败不中断全部
     async def may_fail(name):
-        if name == "坏服务":
-            raise ValueError(f"{name} 挂了")
+        if name == "坏服务": raise ValueError(f"{name} 挂了")
         await asyncio.sleep(0.1)
         return f"{name}: OK"
 
     print("\n  --- return_exceptions=True ---")
-    results = await asyncio.gather(
+    for r in await asyncio.gather(
         may_fail("好服务"), may_fail("坏服务"), return_exceptions=True,
-    )
-    for r in results:
+    ):
         print(f"  {'异常' if isinstance(r, Exception) else '成功'}: {r}")
 
 
@@ -127,8 +125,10 @@ async def create_task_demo():
     # Task 可以 await、取消、查询状态
 
     async def job(name, sec):
-        print(f"  [{name}] 启动"); await asyncio.sleep(sec)
-        print(f"  [{name}] 完成"); return f"{name} 结果"
+        print(f"  [{name}] 启动")
+        await asyncio.sleep(sec)
+        print(f"  [{name}] 完成")
+        return f"{name} 结果"
 
     task1 = asyncio.create_task(job("任务A", 0.3))
     task2 = asyncio.create_task(job("任务B", 0.2))
@@ -142,8 +142,7 @@ async def create_task_demo():
         try:
             await asyncio.sleep(10)
         except asyncio.CancelledError:
-            print("  [长任务] 被取消，清理资源...")
-            raise
+            print("  [长任务] 被取消，清理资源..."); raise
 
     task3 = asyncio.create_task(long_running())
     await asyncio.sleep(0.1)
@@ -210,23 +209,22 @@ async def async_queue_demo():
     async def producer(name, n):
         for i in range(n):
             await queue.put(f"{name}-{i}")
-            print(f"  [生产者 {name}] 放入: {name}-{i}")
+            print(f"  [P-{name}] 放入: {name}-{i}")
             await asyncio.sleep(random.uniform(0.05, 0.1))
 
     async def consumer(name):
-        consumed = 0
+        count = 0
         while True:
             try:
                 item = await asyncio.wait_for(queue.get(), timeout=0.4)
-                print(f"  [消费者 {name}] 取出: {item}")
+                print(f"  [C-{name}] 取出: {item}")
                 queue.task_done()
-                consumed += 1
+                count += 1
             except asyncio.TimeoutError:
-                print(f"  [消费者 {name}] 超时退出，共消费 {consumed} 条")
-                break
+                print(f"  [C-{name}] 超时退出，共消费 {count} 条"); break
 
     await asyncio.gather(
-        producer("P1", 3), producer("P2", 3), consumer("C1"), consumer("C2"),
+        producer("1", 3), producer("2", 3), consumer("1"), consumer("2"),
     )
 
 
@@ -249,7 +247,7 @@ async def timeout_demo():
     except asyncio.TimeoutError:
         print("  超时了！操作被取消 (0.3s)")
 
-    # 带超时的重试模式
+    # 带超时的重试
     print("\n  --- 带超时的重试 ---")
     async def unreliable():
         d = random.uniform(0.1, 0.6)
@@ -258,8 +256,7 @@ async def timeout_demo():
 
     for i in range(1, 4):
         try:
-            r = await asyncio.wait_for(unreliable(), timeout=0.3)
-            print(f"  第{i}次: 成功 - {r}")
+            print(f"  第{i}次: 成功 - {await asyncio.wait_for(unreliable(), timeout=0.3)}")
             break
         except asyncio.TimeoutError:
             print(f"  第{i}次: 超时，重试...")
@@ -282,16 +279,15 @@ async def event_loop_demo():
     loop = asyncio.get_running_loop()
     print(f"  事件循环: {type(loop).__name__}, running={loop.is_running()}")
 
-    # await sleep(0) 让出控制权——演示交替调度
     async def step(tid, n):
         for s in range(n):
             print(f"  [Task-{tid}] 第 {s+1} 步")
-            await asyncio.sleep(0)
+            await asyncio.sleep(0)  # yield 控制权
 
     print("\n  --- 交替调度 ---")
     await asyncio.gather(step("A", 3), step("B", 3))
 
-    # call_soon / call_later 底层调度 API
+    # call_soon / call_later 底层调度
     holder = []
     loop.call_soon(lambda: holder.append("立即"))
     loop.call_later(0.1, lambda: holder.append("0.1s后"))
@@ -316,12 +312,10 @@ async def real_world_scenario():
         await asyncio.sleep(latency)
         return {"service": name, "status": "ok", "ms": int(latency * 1000)}
 
-    # 微服务聚合（API Gateway 模式）
-    print("  --- 微服务聚合 ---")
+    print("  --- 微服务聚合（API Gateway）---")
     t0 = time.perf_counter()
     results = await asyncio.gather(
-        microservice("用户中心", 0.2),
-        microservice("订单系统", 0.3),
+        microservice("用户中心", 0.2), microservice("订单系统", 0.3),
         microservice("支付网关", 0.15),
     )
     for r in results:
@@ -334,13 +328,12 @@ async def real_world_scenario():
 
     async def crawl(url):
         async with sem:
-            print(f"  爬取: {url}")
             await asyncio.sleep(random.uniform(0.1, 0.2))
             return f"{url} -> 200"
 
     urls = [f"https://example.com/page/{i}" for i in range(6)]
     t0 = time.perf_counter()
-    await asyncio.gather(*[crawl(u) for u in urls])
+    results = await asyncio.gather(*[crawl(u) for u in urls])
     print(f"  完成 {len(urls)} 个请求, 耗时: {time.perf_counter()-t0:.2f}s (并发度=3)")
 
 
