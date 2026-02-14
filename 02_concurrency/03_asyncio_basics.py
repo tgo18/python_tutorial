@@ -59,15 +59,14 @@ async def coroutine_run_demo():
         await asyncio.sleep(0.2)
         return {"id": 1, "name": "张三"}
 
-    async def get_orders(user_name):
+    async def get_orders(uid):
         await asyncio.sleep(0.2)
         return [{"order_id": 101, "amount": 99.9}]
 
     t0 = time.perf_counter()
     user = await get_user()
-    orders = await get_orders(user["name"])  # 串行: 每步依赖上一步
-    print(f"  {user['name']}, 总额: {sum(o['amount'] for o in orders)}, "
-          f"耗时: {time.perf_counter()-t0:.2f}s")
+    orders = await get_orders(user["id"])  # 串行: 每步依赖上一步
+    print(f"  {user['name']}, 总额: {sum(o['amount'] for o in orders)}, 耗时: {time.perf_counter()-t0:.2f}s")
 
 
 # =============================================================================
@@ -87,17 +86,14 @@ async def gather_demo():
         await asyncio.sleep(seconds)
         return f"{name}: OK"
 
-    # 串行 vs 并发
     t0 = time.perf_counter()
-    await call_api("服务A", 0.3)
-    await call_api("服务B", 0.3)
-    serial = time.perf_counter() - t0
-    print(f"  串行耗时: {serial:.2f}s")
+    await call_api("服务A", 0.3); await call_api("服务B", 0.3)
+    serial = time.perf_counter() - t0; print(f"  串行耗时: {serial:.2f}s")
 
     t0 = time.perf_counter()
     results = await asyncio.gather(call_api("服务A", 0.3), call_api("服务B", 0.3))
-    concurrent = time.perf_counter() - t0
-    print(f"  并发耗时: {concurrent:.2f}s (快约 {serial/concurrent:.1f} 倍)")
+    par = time.perf_counter() - t0
+    print(f"  并发耗时: {par:.2f}s (快约 {serial/par:.1f} 倍)")
 
     # return_exceptions=True: 单个失败不中断全部
     async def may_fail(name):
@@ -278,7 +274,6 @@ async def event_loop_demo():
 
     loop = asyncio.get_running_loop()
     print(f"  事件循环: {type(loop).__name__}, running={loop.is_running()}")
-
     async def step(tid, n):
         for s in range(n):
             print(f"  [Task-{tid}] 第 {s+1} 步")
@@ -287,8 +282,7 @@ async def event_loop_demo():
     print("\n  --- 交替调度 ---")
     await asyncio.gather(step("A", 3), step("B", 3))
 
-    # call_soon / call_later 底层调度
-    holder = []
+    holder = []  # call_soon / call_later 底层调度
     loop.call_soon(lambda: holder.append("立即"))
     loop.call_later(0.1, lambda: holder.append("0.1s后"))
     await asyncio.sleep(0.2)
@@ -308,16 +302,14 @@ async def real_world_scenario():
     # 适合: Web(FastAPI)、爬虫、微服务、WebSocket、异步DB
     # 不适合: CPU 密集型（用 multiprocessing）
 
-    async def microservice(name, latency):
-        await asyncio.sleep(latency)
-        return {"service": name, "status": "ok", "ms": int(latency * 1000)}
-
+    async def microservice(name, ms):
+        await asyncio.sleep(ms)
+        return {"service": name, "status": "ok", "ms": int(ms * 1000)}
     print("  --- 微服务聚合（API Gateway）---")
     t0 = time.perf_counter()
     results = await asyncio.gather(
         microservice("用户中心", 0.2), microservice("订单系统", 0.3),
-        microservice("支付网关", 0.15),
-    )
+        microservice("支付网关", 0.15))
     for r in results:
         print(f"  {r['service']}: {r['status']} ({r['ms']}ms)")
     print(f"  总耗时: {time.perf_counter()-t0:.2f}s (约等于最慢的 0.3s)")
@@ -333,8 +325,8 @@ async def real_world_scenario():
 
     urls = [f"https://example.com/page/{i}" for i in range(6)]
     t0 = time.perf_counter()
-    results = await asyncio.gather(*[crawl(u) for u in urls])
-    print(f"  完成 {len(urls)} 个请求, 耗时: {time.perf_counter()-t0:.2f}s (并发度=3)")
+    await asyncio.gather(*[crawl(u) for u in urls])
+    print(f"  {len(urls)} 个请求完成, 耗时: {time.perf_counter()-t0:.2f}s (并发度=3)")
 
 
 # =============================================================================
@@ -342,7 +334,6 @@ async def real_world_scenario():
 # =============================================================================
 
 async def main():
-    """主入口：按顺序运行所有演示"""
     await async_await_basics()
     await coroutine_run_demo()
     await gather_demo()
@@ -355,6 +346,5 @@ async def main():
 
 
 if __name__ == "__main__":
-    # asyncio.run() 是 Python 3.7+ 推荐入口
-    # 创建事件循环 -> 运行协程 -> 关闭循环
+    # asyncio.run() 是 Python 3.7+ 推荐入口，创建循环 -> 运行 -> 关闭
     asyncio.run(main())
